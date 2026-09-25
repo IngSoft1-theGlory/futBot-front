@@ -1,0 +1,41 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.form-field__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--form-field-label-color, #f4f4f4);
+}
+
+.form-field__input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--form-field-border-color, #d1d5db);
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-field__input:focus {
+  outline: none;
+  border-color: var(--form-field-focus-color, #2563eb);
+  box-shadow: 0 0 0 3px var(--form-field-focus-ring, rgba(37, 99, 235, 0.2));
+}
+
+.form-field__input--error {
+  border-color: var(--form-field-error-color, #dc2626);
+}
+
+.form-field__input--error:focus {
+  box-shadow: 0 0 0 3px var(--form-field-error-ring, rgba(220, 38, 38, 0.2));
+}
+
+/* Reserva el espacio del mensaje SIEMPRE, esté vacío o no, para que el layout no salte */
+.form-field__error {
+  min-height: 1rem;
+  font-size: 0.8125rem;
+  color: var(--form-field-error-color, #dc2626);
+}
