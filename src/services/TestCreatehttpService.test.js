@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 // IMPORTANTE: el mock de './session' tiene que declararse ANTES de importar
 // httpService.js, porque httpService.js hace `import { getToken } from './session'`
 // y necesitamos que, cuando lo importe, ya reciba la versión falsa (mock).
-vi.mock("./session", () => ({
+vi.mock("./Session", () => ({
   getToken: vi.fn(),
 }))
 
