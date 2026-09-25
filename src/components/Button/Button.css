@@ -1,0 +1,223 @@
+/* ==========================================================
+   Button — componente reutilizable
+   Los colores de cada variante se definen con variables CSS,
+   así el diseño de todos los botones se ajusta desde acá.
+   ========================================================== */
+
+.btn {
+  --btn-from: #3b82f6;
+  --btn-to: #6366f1;
+  --btn-color: #ffffff;
+  --btn-border: rgba(255, 255, 255, 0.18);
+  --btn-glow: rgba(79, 70, 229, 0.45);
+  --btn-focus: #818cf8;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--btn-border);
+  border-radius: 12px;
+
+  /* Degradado más ancho que el botón: al moverlo se "desliza" el color */
+  background-image: linear-gradient(
+    135deg,
+    var(--btn-from) 0%,
+    var(--btn-to) 50%,
+    var(--btn-from) 100%
+  );
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+
+  color: var(--btn-color);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+
+  /* Brillo interno arriba + sombra suave + halo del color del botón */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 14px -4px var(--btn-glow);
+
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    background-position 0.5s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+/* Reflejo de luz que cruza el botón al pasar el mouse */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+/* Capa que "respira" mientras la acción está en curso */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, var(--btn-to), var(--btn-from));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Interacción ---------- */
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background-position: 100% 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    0 10px 24px -6px var(--btn-glow);
+}
+
+.btn:hover:not(:disabled)::before {
+  transform: translateX(120%);
+  transition: transform 0.7s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.08s;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 2px 8px -4px var(--btn-glow);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--btn-focus);
+  outline-offset: 3px;
+}
+
+/* ---------- Variantes ---------- */
+
+.btn--secondary {
+  --btn-from: rgba(148, 163, 184, 0.12);
+  --btn-to: rgba(148, 163, 184, 0.24);
+  --btn-color: inherit;
+  --btn-border: rgba(148, 163, 184, 0.5);
+  --btn-glow: rgba(15, 23, 42, 0.3);
+  --btn-focus: #94a3b8;
+
+  backdrop-filter: blur(8px);
+}
+
+.btn--danger {
+  --btn-from: #ef4444;
+  --btn-to: #e11d48;
+  --btn-glow: rgba(225, 29, 72, 0.45);
+  --btn-focus: #fb7185;
+}
+
+/* ---------- Deshabilitado ---------- */
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+
+/* ---------- Cargando ---------- */
+
+.btn--loading:disabled {
+  opacity: 1;
+  filter: none;
+  cursor: progress;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 4px 14px -4px var(--btn-glow);
+}
+
+.btn--loading::after {
+  animation: btn-breathe 1.6s ease-in-out infinite;
+}
+
+.btn__label {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn--loading .btn__label {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.btn__spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  will-change: transform;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+/* ---------- Animaciones ---------- */
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes btn-breathe {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---------- Accesibilidad: menos movimiento ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn__label {
+    transition: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .btn::before {
+    display: none;
+  }
+
+  .btn--loading::after {
+    animation: none;
+  }
+
+  .btn__spinner {
+    animation-duration: 1.5s;
+  }
+}
