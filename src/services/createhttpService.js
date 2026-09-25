@@ -1,4 +1,4 @@
-import { getToken } from "./Session"
+import { getToken } from "./session"
 
 /*
 
@@ -86,7 +86,7 @@ async function analizarRespuesta(rta) {
         rta.status,
         data?.error ?? "UNKNOWN_ERROR", //si el error no esta definido en la api entoces devuelve UNKNOWN_ERROR
         data?.message ?? "Ocurrió un error inesperado" //lo mismo de arriba
-      )
+      )//el data?.algo se llama optional chaining, significa básicamente: Intentá acceder a error/message, pero si data es null o undefined, no tires un error
     }
   
     return data
@@ -107,12 +107,12 @@ Significa más bien:
 async function solicitar(baseUrl, method , path , body) {
     const tieneCuerpo = body !== undefined && body !== null
   
-    const rta = await fetch(`${baseUrl}${path}`, { method,
+    const respuesta = await fetch(`${baseUrl}${path}`, { method,
                                                    headers: construirHeaders(tieneCuerpo),
                                                    body: tieneCuerpo ? JSON.stringify(body) : undefined,
     })
   
-    return analizarRespuesta(rta)
+    return analizarRespuesta(respuesta)
 }
 
 export function createHttpService(baseUrl = import.meta.env.VITE_API_BASE_URL) {

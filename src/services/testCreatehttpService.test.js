@@ -1,14 +1,16 @@
+//para correr el test = npx vitest run
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 
 // IMPORTANTE: el mock de './session' tiene que declararse ANTES de importar
 // httpService.js, porque httpService.js hace `import { getToken } from './session'`
 // y necesitamos que, cuando lo importe, ya reciba la versión falsa (mock).
-vi.mock("./Session", () => ({
+vi.mock("./session", () => ({
   getToken: vi.fn(),
 }))
 
-import { getToken } from "./Session"
-import { httpService, createHttpService, ApiError } from "./CreatehttpService"
+import { getToken } from "./session"
+import { httpService, createHttpService, ApiError } from "./createhttpService"
 
 // --- Helper ---
 // fetch() real devuelve un objeto Response bastante complejo (headers, body
