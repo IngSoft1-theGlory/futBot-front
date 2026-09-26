@@ -1,4 +1,8 @@
-import { getToken } from "./session"
+import { getToken, expireSession } from "./session"
+
+// Códigos de 401 que indican sesión inválida o vencida.
+// Otros 401 (INVALID_CREDENTIALS en login, PASSWORD_INCORRECT en ligas privadas) NO cierran la sesión.
+const SESSION_ERROR_CODES = ["UNAUTHORIZED", "UNAUTHORIZED_ACCESS"]
 
 /*
 
@@ -82,11 +86,17 @@ async function analizarRespuesta(rta) {
 
     */
     if (!rta.ok) {
-      throw new ApiError (//parecido a assert en c (assert ~~ throw) 
+      const apiError = new ApiError(
         rta.status,
-        data?.error ?? "UNKNOWN_ERROR", //si el error no esta definido en la api entoces devuelve UNKNOWN_ERROR
-        data?.message ?? "Ocurrió un error inesperado" //lo mismo de arriba
-      )//el data?.algo se llama optional chaining, significa básicamente: Intentá acceder a error/message, pero si data es null o undefined, no tires un error
+        data?.error ?? "UNKNOWN_ERROR",
+        data?.message ?? "Ocurrió un error inesperado"
+      )
+
+      if (apiError.status === 401 && SESSION_ERROR_CODES.includes(apiError.error)) {
+        expireSession()
+      }
+
+      throw apiError
     }
   
     return data

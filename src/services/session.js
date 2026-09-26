@@ -1,26 +1,45 @@
 const TOKEN_KEY = "futbot_token"
+const USER_KEY = "futbot_user"
 
-//localStorage.getItem(clave) Lee el dato guardado bajo esa clave (o null si no existe)
+// Funciones que se ejecutan cuando el backend informa que la sesión ya no es válida
+const sessionExpiredListeners = new Set()
+
 export function getToken() {
-    return localStorage.getItem(TOKEN_KEY) 
+  return localStorage.getItem(TOKEN_KEY)
 }
 
-//localStorage.setItem(clave, valor) Guarda un dato bajo esa clave
-export function setToken(token) {
-    localStorage.setItem(TOKEN_KEY, token)
+export function getUser() {
+  const rawUser = localStorage.getItem(USER_KEY)
+  if (!rawUser) return null
+
+  try {
+    return JSON.parse(rawUser)
+  } catch {
+    return null
+  }
 }
 
-//localStorage.removeItem(clave) Borra el dato guardado bajo esa clave
+// Guarda el token y el usuario que devuelve POST /auth/login
+export function setSession({ token, user }) {
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
 export function clearSession() {
-    localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
 }
 
-/*
-Función/¿Quién la usa?/¿Para qué?
+// Permite reaccionar cuando la sesión vence. Devuelve una función para desuscribirse.
+export function onSessionExpired(listener) {
+  sessionExpiredListeners.add(listener)
+  return () => {
+    sessionExpiredListeners.delete(listener)
+  }
+}
 
-getToken/createHttpService.js/leer el token para meterlo en el header Authorization de cada request
-
-setToken/el ticket de login/guardar el token que devuelve el backend cuando el usuario inicia sesión
-
-clearSession/el ticket de logout (o el manejo de un 401)/borrar el token cuando el usuario cierra sesión o cuando la sesión expiró
-*/
+// Lo invoca createHttpService al recibir un 401 de sesión inválida o vencida
+export function expireSession() {
+  clearSession()
+  sessionExpiredListeners.forEach((listener) => listener())
+}
