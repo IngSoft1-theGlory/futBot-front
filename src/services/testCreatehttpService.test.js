@@ -7,9 +7,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 // y necesitamos que, cuando lo importe, ya reciba la versión falsa (mock).
 vi.mock("./session", () => ({
   getToken: vi.fn(),
+  expireSession: vi.fn(),
 }))
 
-import { getToken } from "./session"
+import { getToken, expireSession } from "./session"
 import { httpService, createHttpService, ApiError } from "./createhttpService"
 
 // --- Helper ---
@@ -33,6 +34,8 @@ describe("httpService", () => {
     global.fetch = vi.fn()
     // Por defecto simulamos que no hay usuario logueado.
     getToken.mockReturnValue(null)
+
+    expireSession.mockClear()
   })
 
   afterEach(() => {
@@ -143,6 +146,34 @@ describe("httpService", () => {
         expect(e).toBeInstanceOf(ApiError)
         expect(e).toBeInstanceOf(Error)
       }
+    })
+  })
+
+  describe("Sesión vencida (401)", () => {
+    it("Cierra la sesión ante un 401 UNAUTHORIZED", async () => {
+      global.fetch.mockResolvedValue(
+        fakeResponse({
+          status: 401,
+          ok: false,
+          body: { error: "UNAUTHORIZED", message: "El token de sesión no es válido o ha expirado" },
+        })
+      )
+
+      await expect(httpService.get("/players")).rejects.toMatchObject({ status: 401 })
+      expect(expireSession).toHaveBeenCalledTimes(1)
+    })
+
+    it("NO cierra la sesión ante un 401 que no es de sesión", async () => {
+      global.fetch.mockResolvedValue(
+        fakeResponse({
+          status: 401,
+          ok: false,
+          body: { error: "INVALID_CREDENTIALS", message: "Email o contraseña incorrecto" },
+        })
+      )
+
+      await expect(httpService.post("/auth/login", {})).rejects.toMatchObject({ status: 401 })
+      expect(expireSession).not.toHaveBeenCalled()
     })
   })
 
