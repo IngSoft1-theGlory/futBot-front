@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute"
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute"
 import HomePage from "./pages/HomePage/HomePage"
 import RegisterPage from "./pages/RegisterPage/RegisterPage"
+import LoginPage from "./pages/LoginPage/LoginPage"
 
 function App() {
   return (
@@ -10,7 +11,7 @@ function App() {
       {/* Rutas públicas: solo accesibles sin sesión */}
       <Route element={<PublicOnlyRoute />}>
         {/* Placeholders: se reemplazan en los tickets de login y registro */}
-        <Route path="/login" element={<h1>Login (próximamente)</h1>} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
