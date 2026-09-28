@@ -26,10 +26,9 @@ function Button({
       type={type}
       className={classes}
       disabled={isDisabled}
-      aria-busy={isLoading || undefined}
     >
       <span className="btn__label">{children}</span>
-      {isLoading && <span className="btn__spinner" aria-hidden="true" />}
+      {isLoading && <span className="btn__spinner" />}
     </button>
   );
 }
