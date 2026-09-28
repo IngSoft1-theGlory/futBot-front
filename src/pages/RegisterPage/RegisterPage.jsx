@@ -175,15 +175,13 @@ function RegisterPage() {
     value: values[name],
     onChange: handleChange,
     error: errors[name],
-    "aria-invalid": errors[name] ? true : undefined,
-    "aria-describedby": `${name}-error`,
   })
 
   const isBusy = isSubmitting || isRegistered
 
   return (
     <main className="register-page">
-      <section className="register-card" aria-labelledby="register-title">
+      <section className="register-card" >
         <header className="register-card__header">
           <p className="register-card__brand">FutBot</p>
           <h1 id="register-title" className="register-card__title">
@@ -212,32 +210,39 @@ function RegisterPage() {
             <FormField
               label="Nombre de usuario"
               autoComplete="username"
+              placeholder="Escribí un nombre"
               {...fieldProps("username")}
             />
             <FormField
               label="Email"
               type="email"
               autoComplete="email"
+              placeholder="ejemplo@email.com"
               {...fieldProps("email")}
             />
             <FormField
               label="Contraseña"
               type="password"
               autoComplete="new-password"
+              placeholder="Escribí una contraseña"
               {...fieldProps("password")}
             />
           </fieldset>
 
           <fieldset className="register-form__section" disabled={isBusy}>
             <legend className="register-form__legend">Tu equipo</legend>
-            <FormField label="Nombre del equipo" {...fieldProps("teamName")} />
+            <FormField 
+              label="Nombre del equipo" 
+              placeholder="Elegí el nombre del equipo"
+              {...fieldProps("teamName")} 
+            />
             <div className="logo-picker">
               <span className="logo-picker__label" id="teamLogo-label">
                 Logo del equipo
               </span>
 
               <div className="logo-picker__row">
-                <div className="logo-picker__preview" aria-hidden="true">
+                <div className="logo-picker__preview" >
                   {logoPreview ? (
                     <img src={logoPreview} alt="" className="logo-picker__image" />
                   ) : (
@@ -266,9 +271,6 @@ function RegisterPage() {
                   accept={LOGO_ACCEPT}
                   className="logo-picker__input"
                   onChange={handleLogoChange}
-                  aria-labelledby="teamLogo-label"
-                  aria-invalid={errors.teamLogo ? true : undefined}
-                  aria-describedby="teamLogo-error"
                 />
               </div>
 
