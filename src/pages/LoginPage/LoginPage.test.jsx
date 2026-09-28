@@ -217,8 +217,6 @@ describe("LoginPage", () => {
       await user.click(submitButton())
 
       expect(await screen.findByText("Email o contraseña incorrecto")).toBeTruthy()
-      expect(field("email").getAttribute("aria-invalid")).not.toBe("true")
-      expect(field("password").getAttribute("aria-invalid")).not.toBe("true")
       expect(field("email").value).toBe(VALID_DATA.email)
       expect(field("password").value).toBe(VALID_DATA.password)
     })

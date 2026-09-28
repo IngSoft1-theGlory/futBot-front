@@ -4,6 +4,8 @@ import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute"
 import HomePage from "./pages/HomePage/HomePage"
 import RegisterPage from "./pages/RegisterPage/RegisterPage"
 import LoginPage from "./pages/LoginPage/LoginPage"
+import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerPage"
+import PlayersPage from "./pages/PlayersPage/PlayersPage"
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
       {/* Rutas privadas: requieren sesión */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/players" element={<PlayersPage />} />
+        <Route path="/players/createplayer" element={<CreatePlayerPage />} />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}
