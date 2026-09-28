@@ -130,6 +130,13 @@
   --btn-focus: #fb7185;
 }
 
+.btn--alternative {
+  --btn-from: #27f866;
+  --btn-to: #51e11d;
+  --btn-glow: rgba(113, 246, 99, 0.45);
+  --btn-focus: #bffb71;
+}
+
 /* ---------- Deshabilitado ---------- */
 
 .btn:disabled {

@@ -222,15 +222,13 @@ function CreatePlayerPage() {
     value: values[name],
     onChange: handleChange,
     error: errors[name],
-    "aria-invalid": errors[name] ? true : undefined,
-    "aria-describedby": `${name}-error`,
   })
 
   const totalPacss = sumarPuntosPacss(values)
 
   return (
     <main className="create-player-page">
-      <section className="create-player-card" aria-labelledby="create-player-title">
+      <section className="create-player-card" >
         <header className="create-player-card__header">
           <p className="create-player-card__brand">FutBot</p>
           <h1 id="create-player-title" className="create-player-card__title">
@@ -299,7 +297,7 @@ function CreatePlayerPage() {
           <div className="create-player-form__actions">
             <Button
               type="button"
-              variant="secondary"
+              variant="danger"
               onClick={handleCancel}
               disabled={isSubmitting}
             >

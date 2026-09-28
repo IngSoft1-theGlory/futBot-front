@@ -20,7 +20,7 @@ function HomePage() {
       <h1 className="home-page__title">FutBot</h1>
       <p className="home-page__greeting">Hola, {user?.username ?? "jugador"}.</p>
       <Button onClick={() => navigate("/players")}>Jugadores</Button>
-      <Button variant="secondary" onClick={handleLogout} isLoading={isLoggingOut}>
+      <Button variant="danger" onClick={handleLogout} isLoading={isLoggingOut}>
         Cerrar sesión
       </Button>
     </main>
