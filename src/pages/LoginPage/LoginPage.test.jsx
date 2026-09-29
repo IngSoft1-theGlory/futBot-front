@@ -9,16 +9,13 @@ vi.mock("../../services/createhttpService", async (importOriginal) => {
   return { ...original, httpService: { post: vi.fn() } }
 })
 
-vi.mock("../../services/session", () => ({
-  setSession: vi.fn(),
-  getToken: vi.fn(() => null),
-  clearSession: vi.fn(),
-  expireSession: vi.fn(),
-  onSessionExpired: vi.fn(() => () => {}),
+const mockStartSession = vi.fn()
+
+vi.mock("../../hooks/useSession", () => ({
+  useSession: () => ({ startSession: mockStartSession }),
 }))
 
 import { httpService, ApiError } from "../../services/createhttpService.js"
-import { setSession } from "../../services/session"
 import LoginPage from "./LoginPage"
 
 const VALID_DATA = {
@@ -56,7 +53,7 @@ async function fillForm(user, overrides = {}) {
 describe("LoginPage", () => {
   beforeEach(() => {
     httpService.post.mockReset()
-    setSession.mockReset()
+    mockStartSession.mockReset()
   })
 
   afterEach(() => {
@@ -161,7 +158,7 @@ describe("LoginPage", () => {
     })
 
     it("Mientras la solicitud está en curso no permite un segundo envío", async () => {
-      httpService.post.mockReturnValue(new Promise(() => {})) // nunca se resuelve
+      httpService.post.mockReturnValue(new Promise(() => {}))
       const user = userEvent.setup()
       renderPage()
 
@@ -181,11 +178,10 @@ describe("LoginPage", () => {
       await fillForm(user)
       await user.click(submitButton())
 
-      // Chequeamos el propio <fieldset>
       expect(document.querySelector(".login-form__section").disabled).toBe(true)
     })
 
-    it("Ante un 200 OK guarda la sesión y redirige a la pantalla principal", async () => {
+    it("Ante un 200 OK guarda la sesión (con tokenType) y redirige a la pantalla principal", async () => {
       const responseData = {
         token: "abc123",
         token_type: "Bearer",
@@ -198,7 +194,7 @@ describe("LoginPage", () => {
       await fillForm(user)
       await user.click(submitButton())
 
-      expect(setSession).toHaveBeenCalledWith({
+      expect(mockStartSession).toHaveBeenCalledWith({
         token: "abc123",
         tokenType: "Bearer",
         user: responseData.user,
@@ -221,6 +217,7 @@ describe("LoginPage", () => {
       expect(field("password").getAttribute("aria-invalid")).not.toBe("true")
       expect(field("email").value).toBe(VALID_DATA.email)
       expect(field("password").value).toBe(VALID_DATA.password)
+      expect(mockStartSession).not.toHaveBeenCalled()
     })
 
     it("El botón vuelve a estar habilitado tras un login fallido", async () => {

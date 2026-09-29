@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import FormField from "../../components/FormField/FormField"
 import Button from "../../components/Button/Button"
 import { httpService, ApiError } from "../../services/createhttpService"
-import { setSession } from "../../services/session"
+import { useSession } from "../../hooks/useSession"
 import "./LoginPage.css"
 
 const INITIAL_VALUES = {
@@ -33,6 +33,7 @@ function validate(values) {
 // useState es un hook que permite manejar estados.
 // useNavigate es un hook que permite navegar de un ruta hacia otra.
 function LoginPage() {
+  const { startSession } = useSession()
   const navigate = useNavigate()    
   const [values, setValues] = useState(INITIAL_VALUES)      // Estado que almacena los valores de los campos del formulario
   const [generalError, setGeneralError] = useState("")      // Estado que almacena el error general 
@@ -80,7 +81,7 @@ function LoginPage() {
         password: values.password,
       })
       
-      setSession({ token: data.token, tokenType: data.token_type, user: data.user })   // Se guardan los datos de la sesion 
+      startSession({ token: data.token, tokenType: data.token_type, user: data.user })   
       navigate("/")                                                                    // Se redirige a la pagina principal (HomePage)
        
     } catch (error) {            // Si algo salta en el "try" salta directo al "catch" 
@@ -104,6 +105,12 @@ function LoginPage() {
         <p className="login-card__brand">FutBot</p>
         <h1 className="login-card__title">Iniciar sesión</h1>
       </header>
+
+      {isSubmitting && (
+        <p className="login-card__alert login-card__alert--success" role="status">
+          ¡Inicio exitoso! Te estamos llevando al Menu principal...
+        </p>
+      )}      
 
       {generalError && (
         <p className="login-card__alert login-card__alert--error" role="alert">
