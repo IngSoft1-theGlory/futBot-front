@@ -106,12 +106,6 @@ function LoginPage() {
         <h1 className="login-card__title">Iniciar sesión</h1>
       </header>
 
-      {isSubmitting && (
-        <p className="login-card__alert login-card__alert--success" role="status">
-          ¡Inicio exitoso! Te estamos llevando al Menu principal...
-        </p>
-      )}      
-
       {generalError && (
         <p className="login-card__alert login-card__alert--error" role="alert">
           {generalError}
