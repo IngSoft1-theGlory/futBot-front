@@ -23,9 +23,9 @@ function SessionProvider({ children }) {
   useEffect(() => onSessionExpired(() => setSessionState(null)), [])
 
   // Se usa desde el login al recibir 200 OK de POST /auth/login
-  const startSession = useCallback(({ token, user }) => {
-    setSession({ token, user })
-    setSessionState({ token, user })
+  const startSession = useCallback(({ token, tokenType, user }) => {
+    setSession({ token, tokenType, user })
+    setSessionState({ token, tokenType, user })
   }, [])
 
   const logout = useCallback(async () => {
