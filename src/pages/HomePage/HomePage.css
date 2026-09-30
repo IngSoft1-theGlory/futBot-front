@@ -162,9 +162,9 @@
 
 /* Botones "Unirse a..." en tono verde */
 .action-card__actions .btn--secondary {
-  --btn-from: rgba(17, 211, 46, 0.735);
-  --btn-to: rgba(22, 211, 82, 0.883);
-  --btn-color: #003a13;
+  --btn-from: rgba(8, 117, 24, 0.735);
+  --btn-to: rgba(6, 63, 24, 0.883);
+  --btn-color: #fefffe;
   --btn-border: rgba(16, 185, 129, 0.55);
   --btn-glow: rgba(16, 185, 129, 0.35);
   --btn-focus: #34d399;
