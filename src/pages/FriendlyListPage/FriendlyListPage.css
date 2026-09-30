@@ -1,0 +1,110 @@
+.friendly-list-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.22), transparent 45%),
+    #0b1020;
+}
+
+.friendly-list-page__header {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.friendly-list-page__title {
+  margin: 0;
+  font-size: 2rem;
+  color: #f8fafc;
+}
+
+.friendly-list-page__message {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.friendly-list-page__error {
+  margin: 0;
+  color: #fca5a5;
+}
+
+.friendly-list {
+  width: 100%;
+  max-width: 640px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.friendly-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.friendly-card:hover {
+  border-color: rgba(129, 140, 248, 0.6);
+  transform: translateY(-1px);
+}
+
+.friendly-card:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.friendly-card--selected {
+  border-color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  box-shadow: 0 0 0 1px #4ade80;
+}
+
+.friendly-card__teams {
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.friendly-card__vs {
+  margin: 0 0.6rem;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.friendly-card__meta {
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.friendly-list-page__back {
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+}
+
+.friendly-list-page__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}

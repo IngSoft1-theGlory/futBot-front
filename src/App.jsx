@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage/RegisterPage"
 import LoginPage from "./pages/LoginPage/LoginPage"
 import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerPage"
 import PlayersPage from "./pages/PlayersPage/PlayersPage"
+import FriendlyListPage from "./pages/FriendlyListPage/FriendlyListPage"
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       {/* Rutas privadas: requieren sesión */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/friendlies" element={<FriendlyListPage />} />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
       </Route>
