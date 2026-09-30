@@ -51,21 +51,21 @@ describe("HomePage", () => {
   })
 
   describe("Interfaz", () => {
-    it("Muestra el nombre del usuario en la barra superior y en el saludo", () => {
+    it("Debería mostrar el nombre del usuario en la barra superior y en el saludo", () => {
       renderPage()
 
       expect(screen.getAllByText("Maradona10")).toHaveLength(2)
       expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Hola, Maradona10")
     })
 
-    it("El avatar muestra la inicial del usuario en mayúscula", () => {
+    it("Debería mostrar en el avatar la inicial del usuario en mayúscula", () => {
       mockUser = { ...mockUser, username: "diego" }
       renderPage()
 
       expect(document.querySelector(".home-topbar__avatar").textContent).toBe("D")
     })
 
-    it("Si no hay datos del usuario, muestra un nombre por defecto", () => {
+    it("Debería mostrar un nombre por defecto si no hay datos del usuario", () => {
       mockUser = null
       renderPage()
 
@@ -73,7 +73,7 @@ describe("HomePage", () => {
       expect(document.querySelector(".home-topbar__avatar").textContent).toBe("?")
     })
 
-    it("Muestra las secciones Jugar y Mi equipo con sus tarjetas", () => {
+    it("Debería mostrar las secciones Jugar y Mi equipo con sus tarjetas", () => {
       renderPage()
 
       expect(screen.getByRole("heading", { name: "Jugar" })).toBeTruthy()
@@ -83,7 +83,7 @@ describe("HomePage", () => {
       }
     })
 
-    it("No lista comportamientos, solo muestra el acceso a su pantalla", () => {
+    it("No debería listar comportamientos, solo mostrar el acceso a su pantalla", () => {
       renderPage()
 
       expect(document.querySelector(".behavior-grid")).toBeNull()
@@ -92,7 +92,7 @@ describe("HomePage", () => {
   })
 
   describe("Navegación", () => {
-    it.each(DESTINOS)('El botón "$boton" redirige a $ruta', async ({ boton: nombre, ruta }) => {
+    it.each(DESTINOS)('Debería redirigir a $ruta al presionar "$boton"', async ({ boton: nombre, ruta }) => {
       const user = userEvent.setup()
       renderPage()
 
@@ -103,7 +103,7 @@ describe("HomePage", () => {
   })
 
   describe("Cerrar sesión", () => {
-    it("Al presionar Cerrar sesión llama a logout", async () => {
+    it("Debería llamar a logout al presionar Cerrar sesión", async () => {
       mockLogout.mockResolvedValue()
       const user = userEvent.setup()
       renderPage()
@@ -113,7 +113,7 @@ describe("HomePage", () => {
       expect(mockLogout).toHaveBeenCalledTimes(1)
     })
 
-    it("Mientras se cierra la sesión, el botón queda en carga y no permite un segundo clic", async () => {
+    it("Debería deshabilitar el botón mientras se cierra la sesión y no permitir un segundo clic", async () => {
       mockLogout.mockReturnValue(new Promise(() => {}))
       const user = userEvent.setup()
       renderPage()
