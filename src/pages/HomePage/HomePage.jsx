@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
+import ActionCard from "../../components/ActionCard/ActionCard"
 import { useSession } from "../../hooks/useSession"
 import "./HomePage.css"
 
-// ---------- Íconos (SVG simples, heredan el color del texto) ----------
+// Iconos
 
 function TrophyIcon() {
   return (
@@ -42,29 +43,14 @@ function CodeIcon() {
   )
 }
 
-// ---------- Tarjeta de acción ----------
-
-function ActionCard({ icon, accent, title, description, children }) {
-  return (
-    <article className={`action-card action-card--${accent}`}>
-      <div className="action-card__icon" aria-hidden="true">
-        {icon}
-      </div>
-      <h3 className="action-card__title">{title}</h3>
-      <p className="action-card__description">{description}</p>
-      <div className="action-card__actions">{children}</div>
-    </article>
-  )
-}
-
-// ---------- Página ----------
+// HomePage
 
 function HomePage() {
-  const navigate = useNavigate()
-  const { user, logout } = useSession()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const navigate = useNavigate() // Hook de navegación de React Router, sirve para navegar a otras rutas del sitio al hacer click en botones 
+  const { user, logout } = useSession() // Hook personalizado para obtener la información del usuario logueado y la función de logout
+  const [isLoggingOut, setIsLoggingOut] = useState(false)  // Estado para controlar si se está cerrando sesión
 
-  async function handleLogout() {
+  async function handleLogout() { // Función para manejar el cierre de sesión
     setIsLoggingOut(true)
     await logout()
   }
@@ -79,7 +65,7 @@ function HomePage() {
             {(user?.username ?? "?").charAt(0).toUpperCase()}
           </span>
           <span className="home-topbar__username">{user?.username ?? "Jugador"}</span>
-          <Button variant="secondary" onClick={handleLogout} isLoading={isLoggingOut}>
+          <Button variant="danger" onClick={handleLogout} isLoading={isLoggingOut}>
             Cerrar sesión
           </Button>
         </div>
