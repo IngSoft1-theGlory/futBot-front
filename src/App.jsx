@@ -7,7 +7,7 @@ import LoginPage from "./pages/LoginPage/LoginPage"
 import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerPage"
 import PlayersPage from "./pages/PlayersPage/PlayersPage"
 import FriendlyListPage from "./pages/FriendlyListPage/FriendlyListPage"
-
+import CreateFriendlyPage from "./pages/CreateFriendlyPage/CreateFriendlyPage"
 function App() {
   return (
     <Routes>
@@ -24,6 +24,7 @@ function App() {
         <Route path="/friendlies" element={<FriendlyListPage />} />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
+        <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}
