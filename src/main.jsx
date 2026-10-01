@@ -4,12 +4,15 @@ import { BrowserRouter } from "react-router-dom"
 import SessionProvider from "./context/SessionProvider"
 import App from "./App.jsx"
 import "./index.css"
+import GlobalEventsProvider from "./context/GlobalEventsProvider"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <SessionProvider>
-        <App />
+        <GlobalEventsProvider>
+          <App />
+        </GlobalEventsProvider>
       </SessionProvider>
     </BrowserRouter>
   </StrictMode>
