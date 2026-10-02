@@ -1,0 +1,68 @@
+.friendly-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background-color: #f4f5f7;
+}
+
+.friendly-lobby__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.friendly-lobby__header h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.friendly-lobby__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.friendly-lobby__teams {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 2rem;
+}
+
+.friendly-lobby__team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.friendly-lobby__team p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.friendly-lobby__role {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
