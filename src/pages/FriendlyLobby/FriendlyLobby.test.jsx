@@ -96,7 +96,7 @@ describe("FriendlyLobby", () => {
       httpService.get.mockReturnValue(new Promise(() => {}))
       renderPage("42")
 
-      expect(httpService.get).toHaveBeenCalledWith("/friendlies/42")
+      expect(httpService.get).toHaveBeenCalledWith("/friendly/42")
     })
   })
 
