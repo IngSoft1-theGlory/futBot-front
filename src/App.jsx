@@ -8,6 +8,7 @@ import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerP
 import PlayersPage from "./pages/PlayersPage/PlayersPage"
 import FriendlyListPage from "./pages/FriendlyListPage/FriendlyListPage"
 import CreateFriendlyPage from "./pages/CreateFriendlyPage/CreateFriendlyPage"
+import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
 function App() {
   return (
     <Routes>
@@ -22,6 +23,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/friendlies" element={<FriendlyListPage />} />
+        <Route path="/friendlies/:matchId" element={<FriendlyLobby />} />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
