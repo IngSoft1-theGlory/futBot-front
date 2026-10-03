@@ -7,7 +7,6 @@ import "./FriendlyLobby.css"
 
 const NETWORK_ERROR_MESSAGE =
   "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
-const SOCKET_TIMEOUT_MS = 5000
 
 const STATUS_LABELS = {
   PENDING: "Esperando rival",
@@ -25,7 +24,9 @@ function useFriendlyLobby(matchId, onMatchStarted) {
 
   useEffect(() => {
     let isActive = true
-    httpService.get(`/friendly/${matchId}`)
+
+    httpService
+      .get(`/friendly/${matchId}`)
       .then((data) => {
         if (!isActive) return
         if (data.status === "IN_PROGRESS") onMatchStarted()
@@ -34,8 +35,13 @@ function useFriendlyLobby(matchId, onMatchStarted) {
       .catch((err) => {
         if (isActive) setError(err instanceof ApiError ? err.message : NETWORK_ERROR_MESSAGE)
       })
-      .finally(() => { if (isActive) setLoading(false) })
-    return () => { isActive = false }
+      .finally(() => {
+        if (isActive) setLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
   }, [matchId])
 
   return { match, loading, error }
@@ -46,7 +52,7 @@ function FriendlyLobby() {
   const navigate = useNavigate()
   const { user } = useSession()
 
-  const { match, loading, error, connectionError } = useFriendlyLobby(matchId, () =>
+  const { match, loading, error } = useFriendlyLobby(matchId, () =>
     navigate(`/matches/${matchId}`, { replace: true })
   )
 
@@ -72,7 +78,7 @@ function FriendlyLobby() {
   if (match.team_host.team_id !== user?.team_id) {
     return <Navigate to="/" replace />
   }
-  
+
   const hasRival = match.team_away != null
 
   return (
@@ -83,12 +89,6 @@ function FriendlyLobby() {
           {STATUS_LABELS[match.status] ?? match.status}
         </span>
       </header>
-
-      {connectionError && (
-        <p className="friendly-lobby__connection-error" role="alert">
-          Sin conexión en vivo. Recargá la página para ver si se unió un rival.
-        </p>
-      )}
 
       <section className="friendly-lobby__teams">
         <div className="friendly-lobby__team">
