@@ -82,6 +82,27 @@
   box-shadow: 0 0 0 1px #4ade80;
 }
 
+.friendly-card--own {
+  cursor: default;
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.friendly-card--own:hover {
+  border-color: rgba(148, 163, 184, 0.25);
+  transform: none;
+}
+
+.friendly-card__badge {
+  margin-right: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.25);
+}
+
 .friendly-card__teams {
   font-weight: 600;
   color: #f8fafc;

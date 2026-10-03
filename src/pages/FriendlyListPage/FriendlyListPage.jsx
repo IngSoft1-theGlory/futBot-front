@@ -2,11 +2,16 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useFriendlyMatches } from "../../hooks/useFriendlyMatches"
+import { useSession } from "../../hooks/useSession"
 import "./FriendlyListPage.css"
 
 function FriendlyListPage() {
   const { matches, isLoading, error, isEmpty, refetch } = useFriendlyMatches()
+  const { user } = useSession()
   const [selectedId, setSelectedId] = useState(null)
+
+  // Si el seleccionado desaparece por un evento (cancelado u ocupado), queda en null
+  // y el botón de unirse se deshabilita solo.
 
   const selectedMatch = matches.find((match) => match.matchId === selectedId) ?? null
 
@@ -50,15 +55,26 @@ function FriendlyListPage() {
         <ul className="friendly-list">
           {matches.map((match) => {
             const isSelected = match.matchId === selectedId
+            // El amistoso propio se muestra, pero no se puede elegir para unirse
+            const isOwn = user?.team_id != null && match.teamHostId === user.team_id
+            const cardClasses = [
+              "friendly-card",
+              isSelected && "friendly-card--selected",
+              isOwn && "friendly-card--own",
+            ]
+              .filter(Boolean)
+              .join(" ")
             return (
               <li key={match.matchId}>
                 <button
                   type="button"
-                  className={`friendly-card${isSelected ? " friendly-card--selected" : ""}`}
+                  className={cardClasses}
                   aria-pressed={isSelected}
+                  disabled={isOwn}
                   onClick={() => handleSelect(match.matchId)}
                 >
                   <span className="friendly-card__teams">
+                    {isOwn && <span className="friendly-card__badge">Tu amistoso</span>}
                     Equipo #{match.teamHostId}
                     <span className="friendly-card__vs">vs</span>
                     {match.teamAwayId ? `Equipo #${match.teamAwayId}` : "Esperando rival"}
