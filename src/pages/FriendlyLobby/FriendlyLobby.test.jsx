@@ -13,30 +13,20 @@ vi.mock("../../hooks/useSession", () => ({
   useSession: () => ({ user: mockUser }),
 }))
 
+// Canal global falso: guarda los listeners para poder emitir eventos desde los tests
+const mockListeners = new Map()
+
+vi.mock("../../services/globalSocket", () => ({
+  subscribe: vi.fn((eventName, listener) => {
+    if (!mockListeners.has(eventName)) mockListeners.set(eventName, new Set())
+    mockListeners.get(eventName).add(listener)
+    return () => mockListeners.get(eventName)?.delete(listener)
+  }),
+}))
+
 import { httpService, ApiError } from "../../services/createhttpService.js"
+import { subscribe } from "../../services/globalSocket"
 import FriendlyLobby from "./FriendlyLobby.jsx"
-
-// WebSocket falso: jsdom no trae uno real. Con autoOpen = true simula un
-// servidor que acepta la conexión enseguida (en un microtask, porque el
-// componente asigna onopen justo después del new WebSocket()).
-class FakeWebSocket {
-  static instances = []
-  static autoOpen = true
-
-  constructor(url) {
-    this.url = url
-    this.onopen = null
-    this.onmessage = null
-    this.onerror = null
-    this.onclose = null
-    this.close = vi.fn()
-    FakeWebSocket.instances.push(this)
-
-    if (FakeWebSocket.autoOpen) {
-      queueMicrotask(() => this.onopen?.())
-    }
-  }
-}
 
 const MATCH_SIN_RIVAL = {
   match_id: 5,
@@ -56,9 +46,9 @@ const MATCH_CON_RIVAL = {
 
 function renderPage(matchId = "5") {
   return render(
-    <MemoryRouter initialEntries={[`/friendly/${matchId}`]}>
+    <MemoryRouter initialEntries={[`/friendlies/${matchId}`]}>
       <Routes>
-        <Route path="/friendly/:matchId" element={<FriendlyLobby />} />
+        <Route path="/friendlies/:matchId" element={<FriendlyLobby />} />
         <Route path="/matches/:matchId" element={<h1>Pantalla del partido</h1>} />
         <Route path="/" element={<h1>Pantalla principal</h1>} />
       </Routes>
@@ -66,23 +56,22 @@ function renderPage(matchId = "5") {
   )
 }
 
-async function esperarConexionWS() {
-  await waitFor(() => {
-    expect(FakeWebSocket.instances.length).toBe(1)
+function emitirEvento(event, data) {
+  act(() => {
+    mockListeners.get(event)?.forEach((listener) => listener(data))
   })
-  return FakeWebSocket.instances[0]
 }
 
-function emitirEvento(socket, event, data) {
-  act(() => socket.onmessage({ data: JSON.stringify({ event, data }) }))
+function cantidadDeListeners() {
+  return [...mockListeners.values()].reduce((total, listeners) => total + listeners.size, 0)
 }
 
-// Renderiza el lobby ya cargado y devuelve el socket
+// Renderiza el lobby ya cargado
 async function abrirLobby() {
   httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-  renderPage("5")
+  const resultado = renderPage("5")
   await screen.findByText("alfajoresFC")
-  return esperarConexionWS()
+  return resultado
 }
 
 // ---------- Tests ----------
@@ -91,17 +80,13 @@ describe("FriendlyLobby", () => {
   beforeEach(() => {
     httpService.get.mockReset()
     httpService.post.mockReset()
-    httpService.post.mockResolvedValue({ websocket_url: "ws://test/global", expires_in_seconds: 60 })
+    subscribe.mockClear()
+    mockListeners.clear()
     mockUser = { user_id: 1, team_id: 1, username: "Maradona10", email: "diego@famaf.unc.edu.ar" }
-    FakeWebSocket.instances = []
-    FakeWebSocket.autoOpen = true
-    vi.stubGlobal("WebSocket", FakeWebSocket)
   })
 
   afterEach(() => {
     cleanup()
-    vi.useRealTimers()
-    vi.unstubAllGlobals()
   })
 
   describe("Carga y conexión", () => {
@@ -112,52 +97,29 @@ describe("FriendlyLobby", () => {
       expect(screen.getByText("Cargando partido...")).toBeTruthy()
     })
 
-    it("Debería esperar a que el WebSocket abra antes de pedir el detalle con el matchId de la URL", async () => {
-      FakeWebSocket.autoOpen = false
+    it("Debería pedir el detalle con el matchId de la URL", async () => {
       httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
       renderPage("42")
-
-      const socket = await esperarConexionWS()
-      expect(httpService.post).toHaveBeenCalledWith("/live-token/global")
-      expect(socket.url).toBe("ws://test/global")
-      expect(httpService.get).not.toHaveBeenCalled()
-
-      act(() => socket.onopen())
 
       await waitFor(() => {
         expect(httpService.get).toHaveBeenCalledWith("/friendly/42")
       })
     })
 
-    it("Debería pedir el detalle igual si el WebSocket no abre en 5 segundos", async () => {
-      vi.useFakeTimers()
-      FakeWebSocket.autoOpen = false
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      renderPage()
+    it("Debería suscribirse a MATCH_STARTED en el canal global, sin abrir una conexión propia", async () => {
+      await abrirLobby()
 
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(0)
-      })
-      expect(httpService.get).not.toHaveBeenCalled()
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(5000)
-      })
-
-      expect(httpService.get).toHaveBeenCalledWith("/friendly/5")
-      expect(screen.getByText("alfajoresFC")).toBeTruthy()
-      expect(screen.getByRole("alert").textContent).toMatch(/Sin conexión en vivo/)
+      expect(subscribe).toHaveBeenCalledWith("MATCH_STARTED", expect.any(Function))
+      expect(httpService.post).not.toHaveBeenCalled()
     })
 
-    it("Debería cerrar el WebSocket al salir de la pantalla", async () => {
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      const { unmount } = renderPage()
+    it("Debería dejar de escuchar eventos al salir de la pantalla", async () => {
+      const { unmount } = await abrirLobby()
+      expect(cantidadDeListeners()).toBe(1)
 
-      const socket = await esperarConexionWS()
-      await screen.findByText("alfajoresFC")
       unmount()
 
-      expect(socket.close).toHaveBeenCalled()
+      expect(cantidadDeListeners()).toBe(0)
     })
   })
 
@@ -186,10 +148,8 @@ describe("FriendlyLobby", () => {
 
   describe("Sala de espera", () => {
     it("Debería mostrar el título con el número del amistoso y el equipo anfitrión", async () => {
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      renderPage()
+      await abrirLobby()
 
-      expect(await screen.findByText("alfajoresFC")).toBeTruthy()
       expect(screen.getByText("Anfitrión")).toBeTruthy()
       expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
         "Sala de espera del amistoso #5"
@@ -197,10 +157,8 @@ describe("FriendlyLobby", () => {
     })
 
     it("Debería mostrar el estado del partido traducido", async () => {
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      renderPage()
+      await abrirLobby()
 
-      await screen.findByText("alfajoresFC")
       expect(screen.getByText("Esperando rival")).toBeTruthy()
       expect(screen.queryByText("PENDING")).toBeNull()
     })
@@ -217,10 +175,8 @@ describe("FriendlyLobby", () => {
     })
 
     it("Debería no mostrar ningún botón, porque el anfitrión solo espera", async () => {
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      renderPage()
+      await abrirLobby()
 
-      await screen.findByText("alfajoresFC")
       expect(screen.queryAllByRole("button")).toHaveLength(0)
     })
   })
@@ -248,46 +204,30 @@ describe("FriendlyLobby", () => {
     })
 
     it("Debería redirigir al partido cuando llega MATCH_STARTED para este amistoso", async () => {
-      const socket = await abrirLobby()
+      await abrirLobby()
 
-      emitirEvento(socket, "MATCH_STARTED", { match_id: 5, status: "IN_PROGRESS" })
+      emitirEvento("MATCH_STARTED", { match_id: 5, status: "IN_PROGRESS" })
 
       expect(await screen.findByText("Pantalla del partido")).toBeTruthy()
     })
 
-    it("Debería ignorar eventos de otros partidos, otros tipos de evento y mensajes que no son JSON", async () => {
-      const socket = await abrirLobby()
+    it("Debería redirigir si MATCH_STARTED llega mientras todavía se está cargando el detalle", async () => {
+      httpService.get.mockReturnValue(new Promise(() => {}))
+      renderPage("5")
 
-      emitirEvento(socket, "MATCH_STARTED", { match_id: 999 })
-      emitirEvento(socket, "GUEST_JOINED_FRIENDLY", { match_id: 5 })
-      act(() => socket.onmessage({ data: "esto no es json" }))
+      emitirEvento("MATCH_STARTED", { match_id: 5, status: "IN_PROGRESS" })
+
+      expect(await screen.findByText("Pantalla del partido")).toBeTruthy()
+    })
+
+    it("Debería ignorar MATCH_STARTED de otros partidos", async () => {
+      await abrirLobby()
+
+      emitirEvento("MATCH_STARTED", { match_id: 999, status: "IN_PROGRESS" })
+      emitirEvento("MATCH_STARTED", undefined)
 
       expect(screen.getByText("alfajoresFC")).toBeTruthy()
       expect(screen.queryByText("Pantalla del partido")).toBeNull()
     })
-  })
-
-  describe("Fallas de la conexión en vivo", () => {
-    it("Debería mostrar la sala con un aviso si falla la obtención del token del WebSocket", async () => {
-      httpService.get.mockResolvedValue(MATCH_SIN_RIVAL)
-      httpService.post.mockRejectedValue(new Error("network down"))
-      renderPage()
-
-      expect(await screen.findByText("alfajoresFC")).toBeTruthy()
-      expect(screen.getByRole("alert").textContent).toMatch(/Sin conexión en vivo/)
-      expect(FakeWebSocket.instances).toHaveLength(0)
-    })
-
-    it.each(["onerror", "onclose"])(
-      "Debería mostrar un aviso si el WebSocket dispara %s con la sala abierta",
-      async (handler) => {
-        const socket = await abrirLobby()
-        expect(screen.queryByRole("alert")).toBeNull()
-
-        act(() => socket[handler]())
-
-        expect(screen.getByRole("alert").textContent).toMatch(/Sin conexión en vivo/)
-      }
-    )
   })
 })

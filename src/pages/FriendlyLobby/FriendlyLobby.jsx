@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams, Link, useNavigate, Navigate } from "react-router-dom"
 import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
+import { useGlobalEvent } from "../../hooks/useGlobalEvent"
 import "./FriendlyLobby.css"
 
 const NETWORK_ERROR_MESSAGE =
@@ -17,97 +18,27 @@ function useFriendlyLobby(matchId, onMatchStarted) {
   const [match, setMatch] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [connectionError, setConnectionError] = useState(false)
 
-  const onMatchStartedRef = useRef(onMatchStarted)
-  useEffect(() => {
-    onMatchStartedRef.current = onMatchStarted
+  useGlobalEvent("MATCH_STARTED", (data) => {
+    if (data?.match_id === Number(matchId)) onMatchStarted()
   })
 
   useEffect(() => {
     let isActive = true
-    let socket = null
-    let hasLeft = false
-    let hasLoaded = false
-    let timeoutId = null
-
-    function leave() {
-      if (!isActive || hasLeft) return
-      hasLeft = true
-      onMatchStartedRef.current()
-    }
-
-    async function loadMatch() {
-      if (hasLoaded) return
-      hasLoaded = true
-      clearTimeout(timeoutId)
-
-      try {
-        const data = await httpService.get(`/friendly/${matchId}`)
+    httpService.get(`/friendly/${matchId}`)
+      .then((data) => {
         if (!isActive) return
-
-        if (data.status === "IN_PROGRESS") {
-          leave()
-          return
-        }
-        setMatch(data)
-      } catch (err) {
-        if (!isActive) return
-        setError(err instanceof ApiError ? err.message : NETWORK_ERROR_MESSAGE)
-      } finally {
-        if (isActive) setLoading(false)
-      }
-    }
-
-    function handleSocketFailure() {
-      if (!isActive) return
-      setConnectionError(true)
-      loadMatch()
-    }
-
-    async function start() {
-      try {
-        const { websocket_url } = await httpService.post("/live-token/global")
-        if (!isActive) return
-
-        socket = new WebSocket(websocket_url)
-        timeoutId = setTimeout(handleSocketFailure, SOCKET_TIMEOUT_MS)
-
-        socket.onopen = () => {
-          if (!isActive) return
-          loadMatch()
-        }
-
-        socket.onmessage = (message) => {
-          let parsed
-          try {
-            parsed = JSON.parse(message.data)
-          } catch {
-            return
-          }
-          const { event, data } = parsed
-          if (event === "MATCH_STARTED" && data?.match_id === Number(matchId)) {
-            leave()
-          }
-        }
-
-        socket.onerror = handleSocketFailure
-        socket.onclose = handleSocketFailure
-      } catch {
-        handleSocketFailure()
-      }
-    }
-
-    start()
-
-    return () => {
-      isActive = false
-      clearTimeout(timeoutId)
-      socket?.close()
-    }
+        if (data.status === "IN_PROGRESS") onMatchStarted()
+        else setMatch(data)
+      })
+      .catch((err) => {
+        if (isActive) setError(err instanceof ApiError ? err.message : NETWORK_ERROR_MESSAGE)
+      })
+      .finally(() => { if (isActive) setLoading(false) })
+    return () => { isActive = false }
   }, [matchId])
 
-  return { match, loading, error, connectionError }
+  return { match, loading, error }
 }
 
 function FriendlyLobby() {
