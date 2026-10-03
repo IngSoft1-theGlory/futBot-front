@@ -1,110 +1,123 @@
 import { useEffect, useRef, useState } from "react"
-import { useParams, Link, useNavigate } from "react-router-dom"
-import Button from "../../components/Button/Button"
+import { useParams, Link, useNavigate, Navigate } from "react-router-dom"
 import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
 import "./FriendlyLobby.css"
 
-// Hook para obtener los detalles del partido desde el backend
-function useMatchDetail(matchId) {
+const NETWORK_ERROR_MESSAGE =
+  "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
+const SOCKET_TIMEOUT_MS = 5000
+
+const STATUS_LABELS = {
+  PENDING: "Esperando rival",
+  IN_PROGRESS: "En curso",
+}
+
+function useFriendlyLobby(matchId, onMatchStarted) {
   const [match, setMatch] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [errors, setErrors] = useState(null)
-  // useEffect para obtener los detalles del partido cuando se monta el componente o cambia el matchId
+  const [error, setError] = useState(null)
+  const [connectionError, setConnectionError] = useState(false)
+
+  const onMatchStartedRef = useRef(onMatchStarted)
   useEffect(() => {
-    let isActive = true    // Bandera para evitar actualizar el estado si el componente se desmonta antes de que la promesa se resuelva
-    const fetchMatchDetail = async () => {
-      setLoading(true)
-      setErrors(null)
+    onMatchStartedRef.current = onMatchStarted
+  })
+
+  useEffect(() => {
+    let isActive = true
+    let socket = null
+    let hasLeft = false
+    let hasLoaded = false
+    let timeoutId = null
+
+    function leave() {
+      if (!isActive || hasLeft) return
+      hasLeft = true
+      onMatchStartedRef.current()
+    }
+
+    async function loadMatch() {
+      if (hasLoaded) return
+      hasLoaded = true
+      clearTimeout(timeoutId)
 
       try {
-        const data = await httpService.get(`/friendly/${matchId}`)  
+        const data = await httpService.get(`/friendly/${matchId}`)
         if (!isActive) return
+
+        if (data.status === "IN_PROGRESS") {
+          leave()
+          return
+        }
         setMatch(data)
-      } catch (error) {
+      } catch (err) {
         if (!isActive) return
-        if (error instanceof ApiError) {
-          setErrors(error.message)
-        } else {
-          setErrors("No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.")
-        }
+        setError(err instanceof ApiError ? err.message : NETWORK_ERROR_MESSAGE)
       } finally {
-        if (isActive) {
-          setLoading(false)
-        }
+        if (isActive) setLoading(false)
       }
     }
 
-    fetchMatchDetail()
-
-    return () => {
-      isActive = false
+    function handleSocketFailure() {
+      if (!isActive) return
+      setConnectionError(true)
+      loadMatch()
     }
-  }, [matchId])
 
-  return { match, loading, errors }
-}
-
-
-// Escucha el canal global de WS y reacciona solo a los eventos de este
-// amistoso puntual. El canal es global: recibe eventos de todos los
-// partidos y ligas del sistema, no solo del que estamos mirando.
-function useFriendlyLobbySocket(matchId, handlers) {
-  const handlersRef = useRef(handlers)
-  handlersRef.current = handlers
-
-  useEffect(() => {
-    if (!matchId) return
-
-    let socket = null
-    let isActive = true
-
-    const connect = async () => {
+    async function start() {
       try {
         const { websocket_url } = await httpService.post("/live-token/global")
         if (!isActive) return
 
         socket = new WebSocket(websocket_url)
+        timeoutId = setTimeout(handleSocketFailure, SOCKET_TIMEOUT_MS)
+
+        socket.onopen = () => {
+          if (!isActive) return
+          loadMatch()
+        }
 
         socket.onmessage = (message) => {
-          const { event, data } = JSON.parse(message.data)
-          if (data?.match_id !== Number(matchId)) return
-
-          if (event === "MATCH_STARTED") {
-            handlersRef.current.onMatchStarted(data)
-          } else if (event === "FRIENDLY_CANCELLED") {
-            handlersRef.current.onCancelled(data)
+          let parsed
+          try {
+            parsed = JSON.parse(message.data)
+          } catch {
+            return
+          }
+          const { event, data } = parsed
+          if (event === "MATCH_STARTED" && data?.match_id === Number(matchId)) {
+            leave()
           }
         }
+
+        socket.onerror = handleSocketFailure
+        socket.onclose = handleSocketFailure
       } catch {
-        // Sin conexión en vivo: el usuario puede recargar para ver el estado actual.
+        handleSocketFailure()
       }
     }
 
-    connect()
+    start()
 
     return () => {
       isActive = false
+      clearTimeout(timeoutId)
       socket?.close()
     }
   }, [matchId])
-}
 
+  return { match, loading, error, connectionError }
+}
 
 function FriendlyLobby() {
   const { matchId } = useParams()
-  const { match, loading, errors } = useMatchDetail(matchId)
-  const { user } = useSession()
   const navigate = useNavigate()
+  const { user } = useSession()
 
-  useFriendlyLobbySocket(matchId, {
-    onMatchStarted: () => {
-      navigate(`/matches/${matchId}`, { replace: true })
-    },
-    onCancelled: () => {
-      navigate("/friendlies", { replace: true })
-    },
-  })
+  const { match, loading, error, connectionError } = useFriendlyLobby(matchId, () =>
+    navigate(`/matches/${matchId}`, { replace: true })
+  )
 
   if (loading) {
     return (
@@ -114,30 +127,41 @@ function FriendlyLobby() {
     )
   }
 
-  if (errors) {
+  if (error) {
     return (
       <main className="friendly-lobby">
-        <p role="alert">{errors}</p>
+        <p role="alert">{error}</p>
         <Link to="/">Volver al inicio</Link>
       </main>
     )
   }
 
-  const isHost = match.team_host.team_id === user?.team_id
-  const isAway = match.team_away?.team_id === user?.team_id
-  const hasRival = match.team_away !== null
+  if (!match) return null
+
+  if (match.team_host.team_id !== user?.team_id) {
+    return <Navigate to="/" replace />
+  }
+  
+  const hasRival = match.team_away != null
 
   return (
     <main className="friendly-lobby">
       <header className="friendly-lobby__header">
         <h1>Sala de espera del amistoso #{match.match_id}</h1>
-        <span className="friendly-lobby__status">{match.status}</span>
+        <span className="friendly-lobby__status">
+          {STATUS_LABELS[match.status] ?? match.status}
+        </span>
       </header>
+
+      {connectionError && (
+        <p className="friendly-lobby__connection-error" role="alert">
+          Sin conexión en vivo. Recargá la página para ver si se unió un rival.
+        </p>
+      )}
 
       <section className="friendly-lobby__teams">
         <div className="friendly-lobby__team">
           <p>{match.team_host.team_name}</p>
-          {isHost && <span>(vos)</span>}
           <span className="friendly-lobby__role">Anfitrión</span>
         </div>
 
@@ -145,7 +169,6 @@ function FriendlyLobby() {
           {hasRival ? (
             <>
               <p>{match.team_away.team_name}</p>
-              {isAway && <span>(vos)</span>}
               <span className="friendly-lobby__role">Visitante</span>
             </>
           ) : (
@@ -153,10 +176,6 @@ function FriendlyLobby() {
           )}
         </div>
       </section>
-
-      <Button onClick={() => navigate("/friendlies")}>
-        Cerrar
-      </Button>
     </main>
   )
 }
