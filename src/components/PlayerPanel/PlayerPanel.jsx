@@ -1,0 +1,88 @@
+import { useEffect, useState } from "react"
+import { httpService } from "../../services/createhttpService"
+import "./PlayerPanel.css"
+
+const ATTRIBUTES = [
+  { key: "power", label: "Potencia" },
+  { key: "agility", label: "Agilidad" },
+  { key: "control", label: "Control" },
+  { key: "speed", label: "Velocidad" },
+  { key: "strength", label: "Fuerza" },
+]
+
+function PlayerPanel({ player, onClose }) {
+  const [behavior, setBehavior] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    if (!player?.behavior_id) {
+      setBehavior(null)
+      setHasError(false)
+      setIsLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setIsLoading(true)
+    setHasError(false)
+    setBehavior(null)
+
+    httpService
+      .get(`/behaviors/${player.behavior_id}`)
+      .then((data) => { if (!cancelled) setBehavior(data) })
+      .catch(() => { if (!cancelled) setHasError(true) })
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
+    // Cleanup: si el jugador cambia a mitad del pedido, se ignora la respuesta vieja
+    return () => { cancelled = true }
+  }, [player?.behavior_id])
+
+  if (!player) return null
+
+  function renderBehavior() {
+    if (!player.behavior_id) return <p>Sin información</p>
+    if (isLoading) return <p>Cargando...</p>
+    if (hasError) {
+      return (
+        <p className="player-panel__error" role="alert">
+          Error al cargar el comportamiento
+        </p>
+      )
+    }
+    if (behavior) return <p className="player-panel__behavior-name">{behavior.name}</p>
+    return null
+  }
+
+  return (
+    <aside className="player-panel">
+      <header className="player-panel__header">
+        <h2 className="player-panel__title">#{player.number} {player.name}</h2>
+        <button
+          type="button"
+          className="player-panel__close"
+          onClick={onClose}
+          aria-label="Cerrar panel"
+        >
+          ✕
+        </button>
+      </header>
+
+      <ul className="player-panel__attributes">
+        {ATTRIBUTES.map(({ key, label }) => (
+          <li key={key} className="player-panel__attribute">
+            <span className="player-panel__attribute-label">{label}</span>
+            <span className="player-panel__attribute-value">{player.attributes[key]}</span>
+          </li>
+        ))}
+      </ul>
+
+      <section className="player-panel__behavior">
+        <h3 className="player-panel__section-title">Comportamiento</h3>
+        {renderBehavior()}
+      </section>
+    </aside>
+  )
+}
+
+export default PlayerPanel
