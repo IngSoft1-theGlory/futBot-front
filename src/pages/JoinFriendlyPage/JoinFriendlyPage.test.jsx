@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, cleanup, act } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
+import { render, screen, cleanup, act, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 vi.mock("../../services/createhttpService", async (importOriginal) => {
@@ -61,8 +60,30 @@ function renderPage(matchId = "12") {
   )
 }
 
+// Vuelve a montar la página de cero (para probar varios casos en un mismo test)
+function remount(matchId = "12") {
+  cleanup()
+  httpService.post.mockReset()
+  renderPage(matchId)
+}
+
 function button(name) {
   return screen.getByRole("button", { name })
+}
+
+// Click que espera a que la request simulada se resuelva y React actualice la
+// pantalla. No se usa userEvent porque con timers falsos o con la suite completa
+// corriendo en paralelo los asserts podían llegar antes que el render.
+async function click(element) {
+  await act(async () => {
+    fireEvent.click(element)
+  })
+}
+
+async function advance(ms) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ms)
+  })
 }
 
 function apiError(status, error, message = "mensaje del backend") {
@@ -84,31 +105,20 @@ describe("JoinFriendlyPage", () => {
   })
 
   describe("Formulario", () => {
-    it("Debería mostrar directamente la configuración táctica, sin pasos previos", () => {
-      renderPage()
-
-      expect(screen.getByRole("heading", { name: "Unirse al amistoso" })).toBeTruthy()
-      expect(screen.getByTestId("tactical-setup")).toBeTruthy()
-      expect(screen.queryByRole("radio")).toBeNull()
-    })
-
-    it("Debería mostrar el número del amistoso", () => {
+    it("Debería mostrar directamente la configuración táctica con el número del amistoso y la confirmación 'Unirme al amistoso'", () => {
       renderPage("12")
 
+      expect(screen.getByRole("heading", { name: "Unirse al amistoso" })).toBeTruthy()
       expect(screen.getByText(/Amistoso #12/)).toBeTruthy()
-    })
-
-    it("Debería usar 'Unirme al amistoso' como texto de confirmación", () => {
-      renderPage()
-
+      expect(screen.getByTestId("tactical-setup")).toBeTruthy()
+      expect(screen.queryByRole("radio")).toBeNull()
       expect(button("Unirme al amistoso")).toBeTruthy()
     })
 
     it("Debería volver a la lista al cancelar, sin llamar al backend", async () => {
-      const user = userEvent.setup()
       renderPage()
 
-      await user.click(button("Cancelar configuración"))
+      await click(button("Cancelar configuración"))
 
       expect(screen.getByText("Lista de amistosos")).toBeTruthy()
       expect(httpService.post).not.toHaveBeenCalled()
@@ -116,159 +126,133 @@ describe("JoinFriendlyPage", () => {
   })
 
   describe("Envío", () => {
-    it("Debería enviar el team_id del usuario y la configuración táctica al endpoint del amistoso", async () => {
-      const user = userEvent.setup()
-      httpService.post.mockResolvedValue(JOIN_OK)
+    it("Debería enviar el team_id del usuario y la configuración táctica, y deshabilitar la confirmación mientras se envía", async () => {
+      httpService.post.mockReturnValue(new Promise(() => {}))
       renderPage("12")
 
-      await user.click(button("Unirme al amistoso"))
+      await click(button("Unirme al amistoso"))
 
       expect(httpService.post).toHaveBeenCalledWith("/friendly/12/teams", {
         team_id: 8,
         ...TACTICAL_CONFIG,
       })
-    })
-
-    it("Debería deshabilitar la confirmación mientras se envía", async () => {
-      const user = userEvent.setup()
-      httpService.post.mockReturnValue(new Promise(() => {}))
-      renderPage()
-
-      await user.click(button("Unirme al amistoso"))
-
       expect(button("Unirme al amistoso").disabled).toBe(true)
     })
 
-    it("Debería mostrar un mensaje de éxito y llevar a la pantalla del partido", async () => {
-      vi.useFakeTimers({ shouldAdvanceTime: true })
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      httpService.post.mockResolvedValue(JOIN_OK)
-      renderPage("12")
+    it("Debería mostrar el mensaje de éxito (propio o del backend) y llevar a la pantalla del partido", async () => {
+      vi.useFakeTimers()
+      const casos = [
+        { respuesta: JOIN_OK, texto: /Te uniste al amistoso/ },
+        {
+          respuesta: { ...JOIN_OK, message: "Te has unido al partido exitosamente." },
+          texto: /^Te has unido al partido exitosamente\.$/,
+        },
+      ]
 
-      await user.click(button("Unirme al amistoso"))
+      for (const { respuesta, texto } of casos) {
+        remount("12")
+        httpService.post.mockResolvedValue(respuesta)
 
-      expect(screen.getByRole("status").textContent).toMatch(/Te uniste al amistoso/)
-      expect(button("Unirme al amistoso").disabled).toBe(true)
+        await click(button("Unirme al amistoso"))
 
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1500)
-      })
-      expect(screen.getByText("Pantalla del partido")).toBeTruthy()
-    })
+        expect(screen.getByRole("status").textContent).toMatch(texto)
+        expect(button("Unirme al amistoso").disabled).toBe(true)
 
-    it("Debería usar el mensaje del backend si viene en la respuesta", async () => {
-      const user = userEvent.setup()
-      httpService.post.mockResolvedValue({ ...JOIN_OK, message: "Te has unido al partido exitosamente." })
-      renderPage()
-
-      await user.click(button("Unirme al amistoso"))
-
-      expect(screen.getByRole("status").textContent).toBe("Te has unido al partido exitosamente.")
+        await advance(1500)
+        expect(screen.getByText("Pantalla del partido")).toBeTruthy()
+      }
     })
   })
 
   describe("Errores", () => {
-    it.each(["INVALID_SETTING", "INVALID_CONFIGURATION"])(
-      "Debería mostrar el error %s en la configuración táctica y permitir corregir",
-      async (code) => {
-        const user = userEvent.setup()
+    it("Debería mostrar INVALID_SETTING e INVALID_CONFIGURATION en la configuración táctica y permitir corregir", async () => {
+      for (const code of ["INVALID_SETTING", "INVALID_CONFIGURATION"]) {
+        remount()
         httpService.post.mockRejectedValue(apiError(400, code, "La alineación es inválida."))
-        renderPage()
 
-        await user.click(button("Unirme al amistoso"))
+        await click(button("Unirme al amistoso"))
 
         expect(screen.getByTestId("tactical-error").textContent).toBe("La alineación es inválida.")
         expect(button("Unirme al amistoso").disabled).toBe(false)
         expect(screen.queryByRole("alert")).toBeNull()
       }
-    )
+    })
 
-    it.each([
-      { code: "MATCH_NOT_FOUND", status: 404, texto: /ya no existe o fue cancelado/ },
-      { code: "MATCH_UNAVAILABLE", status: 409, texto: /ya comenzó o ya tiene un rival/ },
-    ])(
-      "Debería informar $code, no permitir reintentar y volver a la lista",
-      async ({ code, status, texto }) => {
-        vi.useFakeTimers({ shouldAdvanceTime: true })
-        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    it("Debería informar MATCH_NOT_FOUND y MATCH_UNAVAILABLE, no permitir reintentar y volver a la lista", async () => {
+      vi.useFakeTimers()
+      const casos = [
+        { code: "MATCH_NOT_FOUND", status: 404, texto: /ya no existe o fue cancelado/ },
+        { code: "MATCH_UNAVAILABLE", status: 409, texto: /ya comenzó o ya tiene un rival/ },
+      ]
+
+      for (const { code, status, texto } of casos) {
+        remount()
         httpService.post.mockRejectedValue(apiError(status, code))
-        renderPage()
 
-        await user.click(button("Unirme al amistoso"))
+        await click(button("Unirme al amistoso"))
 
         expect(screen.getByRole("alert").textContent).toMatch(texto)
         expect(button("Unirme al amistoso").disabled).toBe(true)
         expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull()
 
-        await act(async () => {
-          await vi.advanceTimersByTimeAsync(1500)
-        })
+        await advance(1500)
         expect(screen.getByText("Lista de amistosos")).toBeTruthy()
       }
-    )
+    })
 
     it("Debería informar que faltan jugadores con un link para crearlos", async () => {
-      const user = userEvent.setup()
       httpService.post.mockRejectedValue(apiError(422, "PRECONDITION_FAILED"))
       renderPage()
 
-      await user.click(button("Unirme al amistoso"))
+      await click(button("Unirme al amistoso"))
 
       expect(screen.getByRole("alert").textContent).toMatch(/mínimo de jugadores/)
-      await user.click(screen.getByRole("link", { name: /Ir a mis jugadores/ }))
+      await click(screen.getByRole("link", { name: /Ir a mis jugadores/ }))
       expect(screen.getByText("Mis jugadores")).toBeTruthy()
     })
 
-    it("Debería mostrar el mensaje del backend ante un código desconocido", async () => {
-      const user = userEvent.setup()
+    it("Debería mostrar el mensaje del backend ante un código desconocido, sin ofrecer reintentar", async () => {
       httpService.post.mockRejectedValue(
         apiError(400, "INVALID_SETTINGS", "El equipo no puede unirse a su propio partido.")
       )
       renderPage()
 
-      await user.click(button("Unirme al amistoso"))
+      await click(button("Unirme al amistoso"))
 
       expect(screen.getByRole("alert").textContent).toMatch(/no puede unirse a su propio partido/)
       expect(button("Unirme al amistoso").disabled).toBe(false)
+      expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull()
     })
 
-    it("Debería ofrecer reintentar ante un error de red y reenviar la misma configuración", async () => {
-      const user = userEvent.setup()
-      httpService.post
-        .mockRejectedValueOnce(new TypeError("Failed to fetch"))
-        .mockResolvedValueOnce(JOIN_OK)
-      renderPage("12")
+    it("Debería ofrecer reintentar ante un error de red o 5xx y reenviar la misma configuración", async () => {
+      const casos = [
+        { error: new TypeError("Failed to fetch"), texto: /No se pudo conectar/ },
+        { error: apiError(500, "INTERNAL_ERROR", "Error interno."), texto: /Error interno/ },
+      ]
 
-      await user.click(button("Unirme al amistoso"))
-      expect(screen.getByRole("alert").textContent).toMatch(/No se pudo conectar/)
+      for (const { error, texto } of casos) {
+        remount("12")
+        httpService.post.mockRejectedValueOnce(error).mockResolvedValueOnce(JOIN_OK)
 
-      await user.click(button("Reintentar"))
+        await click(button("Unirme al amistoso"))
+        expect(screen.getByRole("alert").textContent).toMatch(texto)
 
-      expect(httpService.post).toHaveBeenCalledTimes(2)
-      expect(httpService.post).toHaveBeenLastCalledWith("/friendly/12/teams", {
-        team_id: 8,
-        ...TACTICAL_CONFIG,
-      })
-      expect(screen.getByRole("status").textContent).toMatch(/Te uniste al amistoso/)
-    })
+        await click(button("Reintentar"))
 
-    it("Debería ofrecer reintentar ante un error 5xx", async () => {
-      const user = userEvent.setup()
-      httpService.post.mockRejectedValue(apiError(500, "INTERNAL_ERROR", "Error interno."))
-      renderPage()
-
-      await user.click(button("Unirme al amistoso"))
-
-      expect(screen.getByRole("alert").textContent).toMatch(/Error interno/)
-      expect(button("Reintentar")).toBeTruthy()
+        expect(httpService.post).toHaveBeenCalledTimes(2)
+        expect(httpService.post).toHaveBeenLastCalledWith("/friendly/12/teams", {
+          team_id: 8,
+          ...TACTICAL_CONFIG,
+        })
+        expect(screen.getByRole("status").textContent).toMatch(/Te uniste al amistoso/)
+      }
     })
 
     it("Debería no mostrar mensajes propios ante un 401, porque lo resuelve la sesión", async () => {
-      const user = userEvent.setup()
       httpService.post.mockRejectedValue(apiError(401, "UNAUTHORIZED"))
       renderPage()
 
-      await user.click(button("Unirme al amistoso"))
+      await click(button("Unirme al amistoso"))
 
       expect(screen.queryByRole("alert")).toBeNull()
       expect(screen.queryByTestId("tactical-error")).toBeNull()
