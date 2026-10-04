@@ -33,11 +33,11 @@ Un ejemplo de URL con query params:
 // Traduce un elemento crudo de `matches` (tal como lo manda el backend) a la
 // forma que va a consumir la UI, quedándonos sólo con lo que pide el contrato.
 // friendlymapping = mapearAmistoso
-function friendlyMapping(match) {
+export function friendlyMapping(match) {
   return {
     matchId: match.match_id,
     teamHostId: match.team_host_id,
-    teamAwayId: match.team_away_id,
+    teamAwayId: match.team_away_id ?? null,
     status: match.status,
     matchDuration: match.match_duration,
   }

@@ -76,10 +76,18 @@
   outline-offset: 2px;
 }
 
-.friendly-card--selected {
-  border-color: #4ade80;
-  background: rgba(34, 197, 94, 0.15);
-  box-shadow: 0 0 0 1px #4ade80;
+.friendly-card--own {
+  border-style: dashed;
+}
+
+.friendly-card__badge {
+  margin-right: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.25);
 }
 
 .friendly-card__teams {
@@ -94,8 +102,20 @@
 }
 
 .friendly-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: #94a3b8;
   white-space: nowrap;
+}
+
+.friendly-card__action {
+  font-weight: 600;
+  color: #818cf8;
+}
+
+.friendly-card--own .friendly-card__action {
+  color: #c7d2fe;
 }
 
 .friendly-list-page__back {

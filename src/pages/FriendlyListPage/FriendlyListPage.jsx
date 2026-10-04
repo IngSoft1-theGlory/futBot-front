@@ -1,25 +1,23 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useFriendlyMatches } from "../../hooks/useFriendlyMatches"
+import { useSession } from "../../hooks/useSession"
 import "./FriendlyListPage.css"
+
+// Sala de espera de un amistoso propio (GLORY-111)
+export function friendlyLobbyPath(matchId) {
+  return `/friendlies/${matchId}`
+}
+
+// Formulario para unirse a un amistoso de otro equipo (GLORY-109)
+export function joinFriendlyPath(matchId) {
+  return `/friendlies/${matchId}/join`
+}
 
 function FriendlyListPage() {
   const { matches, isLoading, error, isEmpty, refetch } = useFriendlyMatches()
-  const [selectedId, setSelectedId] = useState(null)
-
-  const selectedMatch = matches.find((match) => match.matchId === selectedId) ?? null
-
-  function handleSelect(matchId) {
-    // Volver a tocar el partido seleccionado lo deselecciona
-    setSelectedId((current) => (current === matchId ? null : matchId))
-  }
-
-  function handleJoin() {
-    // TODO: todavía no existe el endpoint/servicio para unirse a un amistoso.
-    // Cuando exista, llamarlo acá con selectedMatch.matchId.
-    console.info("Unirse al amistoso", selectedMatch?.matchId)
-  }
+  const { user } = useSession()
+  const navigate = useNavigate()
 
   return (
     <main className="friendly-list-page">
@@ -49,22 +47,29 @@ function FriendlyListPage() {
       {matches.length > 0 && (
         <ul className="friendly-list">
           {matches.map((match) => {
-            const isSelected = match.matchId === selectedId
+            // El amistoso propio lleva a su sala de espera; el de otro equipo, a unirse
+            const isOwn = user?.team_id != null && match.teamHostId === user.team_id
+            const destination = isOwn
+              ? friendlyLobbyPath(match.matchId)
+              : joinFriendlyPath(match.matchId)
+            const actionLabel = isOwn ? "Ir a la sala" : "Unirme"
+
             return (
               <li key={match.matchId}>
                 <button
                   type="button"
-                  className={`friendly-card${isSelected ? " friendly-card--selected" : ""}`}
-                  aria-pressed={isSelected}
-                  onClick={() => handleSelect(match.matchId)}
+                  className={`friendly-card${isOwn ? " friendly-card--own" : ""}`}
+                  onClick={() => navigate(destination)}
                 >
                   <span className="friendly-card__teams">
+                    {isOwn && <span className="friendly-card__badge">Tu amistoso</span>}
                     Equipo #{match.teamHostId}
                     <span className="friendly-card__vs">vs</span>
                     {match.teamAwayId ? `Equipo #${match.teamAwayId}` : "Esperando rival"}
                   </span>
                   <span className="friendly-card__meta">
                     {match.matchDuration} min
+                    <span className="friendly-card__action">{actionLabel}</span>
                   </span>
                 </button>
               </li>
@@ -72,12 +77,6 @@ function FriendlyListPage() {
           })}
         </ul>
       )}
-
-      <div className="friendly-list-page__actions">
-        <Button variant="alternative" disabled={!selectedMatch} onClick={handleJoin}>
-          Unirme al Amistoso
-        </Button>
-      </div>
 
       <Link to="/" className="friendly-list-page__back">
         Volver al Inicio
