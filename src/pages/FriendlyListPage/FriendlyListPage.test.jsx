@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup, act } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 let mockUser = { user_id: 1, team_id: 5 }
 
@@ -44,8 +44,12 @@ function respuestaCon(matches) {
 async function renderPage(matches) {
   fetchFriendlyMatches.mockResolvedValue(respuestaCon(matches))
   render(
-    <MemoryRouter>
-      <FriendlyListPage />
+    <MemoryRouter initialEntries={["/friendlies"]}>
+      <Routes>
+        <Route path="/friendlies" element={<FriendlyListPage />} />
+        <Route path="/friendlies/:matchId" element={<h1>Sala de espera</h1>} />
+        <Route path="/friendlies/:matchId/join" element={<h1>Unirse al amistoso</h1>} />
+      </Routes>
     </MemoryRouter>
   )
   await screen.findAllByText(/Equipo #|no hay amistosos/i)
@@ -80,27 +84,43 @@ describe("FriendlyListPage en tiempo real", () => {
     expect(screen.getByText(/no hay amistosos disponibles/i)).toBeTruthy()
   })
 
-  it("Debería marcar el amistoso propio y no permitir elegirlo", async () => {
+  it("Debería marcar el amistoso propio con la etiqueta Tu amistoso", async () => {
     await renderPage([AMISTOSO_AJENO, AMISTOSO_PROPIO])
 
     const tarjetaPropia = screen.getByText("Tu amistoso").closest("button")
-    expect(tarjetaPropia.disabled).toBe(true)
-
-    const tarjetaAjena = screen.getByText(/Equipo #7/).closest("button")
-    expect(tarjetaAjena.disabled).toBe(false)
+    expect(tarjetaPropia.textContent).toMatch(/Equipo #5/)
+    expect(screen.getByText(/Equipo #7/).closest("button").textContent).not.toMatch(/Tu amistoso/)
   })
 
-  it("Debería deshabilitar Unirme si el amistoso seleccionado deja de estar disponible", async () => {
-    await renderPage([AMISTOSO_AJENO])
+  it("Debería llevar a la sala de espera al tocar un amistoso propio", async () => {
+    await renderPage([AMISTOSO_AJENO, AMISTOSO_PROPIO])
+
+    act(() => {
+      screen.getByText("Tu amistoso").closest("button").click()
+    })
+
+    expect(await screen.findByText("Sala de espera")).toBeTruthy()
+  })
+
+  it("Debería llevar al formulario para unirse al tocar un amistoso de otro equipo", async () => {
+    await renderPage([AMISTOSO_AJENO, AMISTOSO_PROPIO])
 
     act(() => {
       screen.getByText(/Equipo #7/).closest("button").click()
     })
-    const unirme = screen.getByRole("button", { name: /Unirme al Amistoso/i })
-    expect(unirme.disabled).toBe(false)
 
-    emit("GUEST_JOINED_FRIENDLY", { match_id: 1, team_host_id: 7, team_away_id: 8 })
+    expect(await screen.findByText("Unirse al amistoso")).toBeTruthy()
+  })
 
-    expect(screen.getByRole("button", { name: /Unirme al Amistoso/i }).disabled).toBe(true)
+  it("Debería llevar a unirse si el usuario no tiene equipo en la sesión", async () => {
+    mockUser = null
+    await renderPage([AMISTOSO_PROPIO])
+
+    expect(screen.queryByText("Tu amistoso")).toBeNull()
+    act(() => {
+      screen.getByText(/Equipo #5/).closest("button").click()
+    })
+
+    expect(await screen.findByText("Unirse al amistoso")).toBeTruthy()
   })
 })
