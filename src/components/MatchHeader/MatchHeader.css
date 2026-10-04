@@ -1,0 +1,51 @@
+.match-header {
+  display: flex;
+  justify-content: space-between; /* local a la izquierda, centro en medio, visitante a la derecha */
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+}
+
+.match-header__team {
+  flex: 1;                /* ambos equipos ocupan el mismo ancho, así el centro queda realmente centrado */
+  min-width: 0;           /* necesario para que el texto largo pueda recortarse dentro de un flex */
+  display: flex;
+  flex-direction: column; /* logo arriba, nombre abajo */
+  align-items: center;
+  gap: 8px;
+}
+
+.match-header__logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;    /* el logo entra completo, sin deformarse */
+}
+
+.match-header__name {
+  max-width: 100%;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* "Nombre muy lar..." si no entra */
+}
+
+.match-header__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.match-header__score {
+  margin: 0;
+  font-size: 2.5rem;       /* el marcador es lo más importante */
+  font-weight: 700;
+  line-height: 1;
+}
+
+.match-header__clock {
+  margin: 0;
+  font-size: 1.1rem;       /* más chico que el marcador */
+  font-variant-numeric: tabular-nums; /* dígitos del mismo ancho: el reloj no "baila" */
+}
