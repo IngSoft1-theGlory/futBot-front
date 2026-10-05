@@ -11,6 +11,7 @@ import CreateFriendlyPage from "./pages/CreateFriendlyPage/CreateFriendlyPage"
 import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
 import JoinFriendlyPage from "./pages/JoinFriendlyPage/JoinFriendlyPage"
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
+import MatchResultPage from "./pages/MatchResultPage/MatchResultPage"
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/friendlies/:matchId" element={<FriendlyLobby />} />
         <Route path="/friendlies/:matchId/join" element={<JoinFriendlyPage />} />
         <Route path="/matches/:matchId" element={<MatchScreenPage />} />
+        <Route path="/matches/:matchId/result" element={<MatchResultPage />} />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
