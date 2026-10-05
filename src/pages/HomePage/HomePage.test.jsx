@@ -19,7 +19,7 @@ const DESTINOS = [
   { boton: "Unirse a una liga", ruta: "/leagues" },
   { boton: "Crear amistoso", ruta: "/friendlies/new" },
   { boton: "Unirse a un amistoso", ruta: "/friendlies" },
-  { boton: "Jugadores", ruta: "/players" },
+  { boton: "Crear jugador", ruta: "/players/createplayer" },
   { boton: "Ver comportamientos", ruta: "/behaviors" },
 ]
 

@@ -21,12 +21,13 @@ const VALID_DATA = {
 }
 
 // Renderiza la página dentro de un router, con una pantalla "anterior" falsa
-// para poder comprobar que "Cancelar" vuelve atrás.
+// para poder comprobar que "Cancelar" vuelve al lobby.
 function renderPage() {
   render(
-    <MemoryRouter initialEntries={["/", "/players/createplayer"]} initialIndex={1}>
+    <MemoryRouter initialEntries={["/players", "/players/createplayer"]} initialIndex={1}>
       <Routes>
-        <Route path="/" element={<h1>Pantalla anterior</h1>} />
+        <Route path="/" element={<h1>Lobby</h1>} />
+        <Route path="/players" element={<h1>Lista de jugadores</h1>} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
       </Routes>
     </MemoryRouter>
@@ -80,13 +81,13 @@ describe("CreatePlayerPage", () => {
       expect(screen.getByText("Total repartido: 300 / 300 puntos")).toBeTruthy()
     })
 
-    it("Cancelar vuelve a la pantalla anterior", async () => {
+    it("Cancelar vuelve al lobby, no a la lista de jugadores", async () => {
       const user = userEvent.setup()
       renderPage()
 
       await user.click(screen.getByRole("button", { name: /cancelar/i }))
 
-      expect(screen.getByText("Pantalla anterior")).toBeTruthy()
+      expect(screen.getByText("Lobby")).toBeTruthy()
     })
   })
 
@@ -141,6 +142,35 @@ describe("CreatePlayerPage", () => {
       await user.type(field("name"), "Lionel Messi")
 
       expect(screen.queryByText("El nombre del jugador es obligatorio.")).toBeNull()
+    })
+  })
+
+  describe("Número de camiseta", () => {
+    it("Acepta el número 1 y lo envía al backend", async () => {
+      httpService.post.mockResolvedValue({})
+      const user = userEvent.setup()
+      renderPage()
+
+      await fillForm(user)
+      await user.clear(field("number"))
+      await user.type(field("number"), "1")
+      await user.click(submitButton())
+
+      expect(screen.queryByText(/número de camiseta debe ser/i)).toBeNull()
+      expect(httpService.post).toHaveBeenCalledWith("/players", expect.objectContaining({ number: 1 }))
+    })
+
+    it("Rechaza el número 0", async () => {
+      const user = userEvent.setup()
+      renderPage()
+
+      await fillForm(user)
+      await user.clear(field("number"))
+      await user.type(field("number"), "0")
+      await user.click(submitButton())
+
+      expect(screen.getByText(/número de camiseta debe ser/i)).toBeTruthy()
+      expect(httpService.post).not.toHaveBeenCalled()
     })
   })
 

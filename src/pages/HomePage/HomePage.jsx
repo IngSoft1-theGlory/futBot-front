@@ -123,7 +123,7 @@ function HomePage() {
               title="Jugadores"
               description="Sumá jugadores a tu plantel y repartí sus atributos: potencia, agilidad, control, velocidad y fuerza."
             >
-              <Button onClick={() => navigate("/players")}>Jugadores</Button>
+              <Button onClick={() => navigate("/players/createplayer")}>Crear jugador</Button>
             </ActionCard>
 
             <ActionCard
