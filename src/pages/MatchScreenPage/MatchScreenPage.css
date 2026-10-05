@@ -1,0 +1,44 @@
+.match-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 1rem;
+  color: #e2e8f0;
+  background: #0b1020;
+}
+
+/* Pantallas de carga y de error: contenido centrado */
+.match-page--message {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.match-page a {
+  color: #c7d2fe;
+}
+
+/* Aviso "Reconectando…" */
+.match-page__reconnecting {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  color: #1f2937;
+  background: #fbbf24;
+  border-radius: 0.5rem;
+}
+
+/* Cancha a la izquierda y panel del jugador a la derecha (abajo en pantallas chicas) */
+.match-page__content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.match-page__content > svg {
+  flex: 1 1 480px;
+  min-width: 0;
+}
