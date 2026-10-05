@@ -64,7 +64,7 @@ describe("MatchResultPage", () => {
     fetchMatchResult.mockReturnValue(new Promise(() => {}))
     renderPage()
 
-    expect(screen.getByText("Cargando resultado...")).toBeTruthy()
+    expect(screen.getByText("Cargando Resultado...")).toBeTruthy()
   })
 
   it("Muestra los dos equipos con sus goles y que el usuario ganó", async () => {
@@ -97,7 +97,7 @@ describe("MatchResultPage", () => {
     const rival = screen.getByText("Los Tigres").closest("section")
     expect(propio.className).toContain("result-team--own")
     expect(rival.className).not.toContain("result-team--own")
-    expect(screen.getByText("Tu equipo")).toBeTruthy()
+    expect(screen.getByText("Tu Equipo")).toBeTruthy()
   })
 
   it("Si el partido sigue en curso, redirige a la pantalla del partido", async () => {
@@ -112,7 +112,7 @@ describe("MatchResultPage", () => {
     renderPage()
 
     expect(await screen.findByText("El partido no existe.")).toBeTruthy()
-    expect(screen.getByRole("link", { name: "Volver al inicio" }).getAttribute("href")).toBe("/")
+    expect(screen.getByRole("link", { name: "Volver al Inicio" }).getAttribute("href")).toBe("/")
   })
 
   it("Ante un error de red muestra un mensaje y permite reintentar", async () => {
@@ -132,7 +132,7 @@ describe("MatchResultPage", () => {
     fetchMatchResult.mockRejectedValue(new ApiError(401, "UNAUTHORIZED", "Sesión expirada."))
     renderPage()
 
-    expect(await screen.findByText("Cargando resultado...")).toBeTruthy()
+    expect(await screen.findByText("Cargando Resultado...")).toBeTruthy()
     expect(screen.queryByRole("alert")).toBeNull()
   })
 
@@ -141,7 +141,7 @@ describe("MatchResultPage", () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole("button", { name: "Ver amistosos" }))
+    await user.click(await screen.findByRole("button", { name: "Ver Amistosos" }))
     expect(screen.getByText("Amistosos")).toBeTruthy()
   })
 
@@ -150,7 +150,7 @@ describe("MatchResultPage", () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole("button", { name: "Volver al inicio" }))
+    await user.click(await screen.findByRole("button", { name: "Volver al Inicio" }))
     expect(screen.getByText("Inicio")).toBeTruthy()
   })
 })
