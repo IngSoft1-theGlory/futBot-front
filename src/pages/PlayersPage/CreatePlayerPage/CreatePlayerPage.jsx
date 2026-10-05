@@ -61,7 +61,7 @@ function validate(values) { //values tiene el formato de VALORES_INICIALES
   */ 
   if (!values.number.toString().trim()) {
     errors.number = "El número de camiseta es obligatorio." //mismo caso que con name arriba
-  } else if (!Number.isInteger(Number(values.number)) || Number(values.number) < 0 || Number(values.number) > 100) {
+  } else if (!Number.isInteger(Number(values.number)) || Number(values.number) < 1 || Number(values.number) > 100) {
     errors.number = "El número de camiseta debe ser un número entero positivo entre 1 y 99."
   }
 
