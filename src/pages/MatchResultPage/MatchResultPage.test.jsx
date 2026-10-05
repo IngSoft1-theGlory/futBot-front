@@ -111,7 +111,7 @@ describe("MatchResultPage", () => {
     fetchMatchResult.mockRejectedValue(new ApiError(404, "MATCH_NOT_FOUND", "No existe."))
     renderPage()
 
-    expect(await screen.findByText("El partido no existe.")).toBeTruthy()
+    expect(await screen.findByText("El partido no existe")).toBeTruthy()
     expect(screen.getByRole("link", { name: "Volver al Inicio" }).getAttribute("href")).toBe("/")
   })
 
