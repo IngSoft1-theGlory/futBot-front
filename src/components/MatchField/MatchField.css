@@ -1,0 +1,62 @@
+/* 
+   Prefijo pitch-player / pitch-ball para no chocar con otros estilos 
+
+   Un tick dura 0,5 s: la transicion lineal de esa duracion hace que el
+   movimiento sea continuo entre un tick y el siguiente 
+
+*/
+.pitch-player,
+.pitch-ball {
+  transition: transform 0.5s linear;
+}
+
+.pitch-player {
+  cursor: pointer;
+  outline: none;
+}
+
+.pitch-player__body {
+  stroke: #fff;
+  stroke-width: 0.25;
+}
+
+/* Local en azul, visitante en rojo */
+.pitch-player--home .pitch-player__body {
+  fill: #4f366e;
+}
+
+.pitch-player--away .pitch-player__body {
+  fill: #ff922d;
+}
+
+.pitch-player__number {
+  fill: #fff;
+  font-size: 1.8px;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  /* El clic lo recibe el <g>, no el texto */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Seleccionado (o con foco de teclado): anillo amarillo */
+.pitch-player--selected .pitch-player__body,
+.pitch-player:focus-visible .pitch-player__body {
+  stroke: #ffd43b;
+  stroke-width: 0.5;
+}
+
+.pitch-ball circle {
+  fill: #fff;
+  stroke: #111;
+  stroke-width: 0.2;
+  /* La pelota no debe tapar los clics a los jugadores */
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pitch-player,
+  .pitch-ball {
+    transition: none;
+  }
+}
