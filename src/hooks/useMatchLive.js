@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
-import { openMatchSocket } from "../services/matchSocket"
+import { openMatchSocket } from "../services/matchSockets"
 import { applyTick, applyFullState, isMatchOver, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
 
