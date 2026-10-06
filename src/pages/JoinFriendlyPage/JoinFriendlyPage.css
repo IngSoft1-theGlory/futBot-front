@@ -1,0 +1,96 @@
+/* Mismo estilo visual que CreateFriendlyPage, para que ambos formularios se vean iguales */
+
+.join-friendly-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 2rem 1rem 3rem;
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(59, 130, 246, 0.22), transparent 40%),
+    radial-gradient(circle at 85% 70%, rgba(6, 182, 212, 0.16), transparent 45%),
+    #0b1020;
+}
+
+.join-friendly {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ---------- Encabezado ---------- */
+
+.join-friendly__header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.join-friendly__brand {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #60a5fa, #818cf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.join-friendly__title {
+  margin: 0;
+  font-size: 1.75rem;
+  color: #f8fafc;
+}
+
+.join-friendly__subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+/* ---------- Mensajes ---------- */
+
+.join-friendly__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  max-width: 1000px;
+  margin: 0 auto 1rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  animation: join-friendly-alert-in 0.25s ease;
+}
+
+.join-friendly__alert--success {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.join-friendly__alert--error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+.join-friendly__link {
+  font-weight: 600;
+  color: #c7d2fe;
+}
+
+/* ---------- Animaciones ---------- */
+
+@keyframes join-friendly-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-friendly__alert {
+    animation: none;
+  }
+}

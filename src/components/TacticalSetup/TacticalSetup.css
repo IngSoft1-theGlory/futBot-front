@@ -1,0 +1,493 @@
+/* ---------- Tarjeta ---------- */
+
+.tactical {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  animation: tactical-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tactical__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tactical__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: #f8fafc;
+}
+
+.tactical__subtitle {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.tactical__progress {
+  flex-shrink: 0;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tactical__progress--done {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+
+.tactical__alert {
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  font-size: 0.9rem;
+  color: #fecaca;
+}
+
+.tactical__section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* ---------- Distribución ---------- */
+
+.tactical__layout {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 1.75rem;
+}
+
+.tactical__layout:disabled {
+  opacity: 0.7;
+}
+
+.tactical__lineup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+/* ---------- Selector de formación ---------- */
+
+.formation-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.formation-picker__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.06);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formation-picker__option:hover:not(:disabled) {
+  border-color: rgba(129, 140, 248, 0.5);
+}
+
+.formation-picker__option:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.formation-picker__option--selected {
+  border-color: #818cf8;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(99, 102, 241, 0.22));
+  box-shadow: 0 8px 20px -10px rgba(79, 70, 229, 0.7);
+}
+
+.formation-picker__label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.formation-picker__description {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* ---------- Mini cancha (media cancha, arco propio abajo) ---------- */
+
+.pitch {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 4.4;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: repeating-linear-gradient(
+    180deg,
+    #0f2e24 0,
+    #0f2e24 12.5%,
+    #123628 12.5%,
+    #123628 25%
+  );
+}
+
+/* Media circunferencia del círculo central (arriba) */
+.pitch__center-circle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 36%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pitch__box {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 60%;
+  height: 20%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 0;
+  transform: translateX(-50%);
+}
+
+.pitch__goal-area {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 28%;
+  height: 8%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 0;
+  transform: translateX(-50%);
+}
+
+.pitch__player {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 6.5rem;
+  transform: translate(-50%, -50%);
+  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1), top 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pitch__dot {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.55);
+  font-weight: 800;
+  color: #94a3b8;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pitch__player--filled .pitch__dot {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  box-shadow: 0 6px 16px -4px rgba(79, 70, 229, 0.8);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.pitch__name {
+  max-width: 100%;
+  padding: 0.1rem 0.45rem;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.6);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+/* ---------- Filas de la alineación ---------- */
+
+.lineup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lineup-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lineup-row--complete {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: inset 3px 0 0 #10b981;
+}
+
+/* Etiqueta arriba y nombre del puesto abajo, para que no se corte */
+.lineup-row__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.lineup-row__badge {
+  flex-shrink: 0;
+  min-width: 4.2rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.lineup-row__badge--starter {
+  border: 1px solid rgba(129, 140, 248, 0.45);
+  background: rgba(99, 102, 241, 0.18);
+  color: #c7d2fe;
+}
+
+.lineup-row__badge--substitute {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+}
+
+.lineup-row__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f8fafc;
+}
+
+.lineup-row__select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 2rem 0.55rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E")
+      no-repeat right 0.75rem center,
+    rgba(2, 6, 23, 0.55);
+  color: #e2e8f0;
+  /* Sin font: inherit ni font-size: en Brave rompen el desplegable nativo */
+  color-scheme: dark;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lineup-row__select:hover:not(:disabled) {
+  border-color: rgba(129, 140, 248, 0.5);
+}
+
+.lineup-row__select:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+}
+
+.lineup-row__select option {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.lineup-row__select option:disabled {
+  color: #475569;
+}
+
+/* ---------- Acciones ---------- */
+
+.tactical__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* ---------- Carga / error / sin jugadores ---------- */
+
+.tactical__loading {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 1.75rem;
+}
+
+.tactical__loading-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tactical-skeleton {
+  display: block;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.08) 25%,
+    rgba(148, 163, 184, 0.18) 50%,
+    rgba(148, 163, 184, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: tactical-shimmer 1.4s ease-in-out infinite;
+}
+
+.tactical-skeleton--pitch {
+  aspect-ratio: 4 / 4.4;
+}
+
+.tactical-skeleton--row {
+  height: 3.2rem;
+}
+
+.tactical__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.tactical__state-text {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.tactical__link {
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+}
+
+.tactical__link:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+/* ---------- Animaciones ---------- */
+
+@keyframes tactical-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes tactical-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tactical,
+  .tactical-skeleton {
+    animation: none;
+  }
+
+  .pitch__player,
+  .pitch__dot,
+  .lineup-row {
+    transition: none;
+  }
+}
+
+/* ---------- Pantallas medianas y chicas ---------- */
+
+@media (max-width: 860px) {
+  .tactical__layout,
+  .tactical__loading {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical__formation {
+    max-width: 380px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .tactical {
+    padding: 1.25rem 1rem;
+    border-radius: 16px;
+  }
+
+  .tactical__header {
+    flex-direction: column;
+  }
+
+  .lineup-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-row__info {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .tactical__actions .btn {
+    flex: 1;
+  }
+}

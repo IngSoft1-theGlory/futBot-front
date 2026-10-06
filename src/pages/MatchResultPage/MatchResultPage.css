@@ -1,0 +1,85 @@
+.match-result-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #e2e8f0;
+  background: #0b1020;
+}
+
+.match-result-page a {
+  color: #c7d2fe;
+}
+
+.match-result-page__title {
+  margin: 0;
+  color: #f8fafc;
+}
+
+.match-result-page__outcome {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.match-result-page__outcome--won {
+  color: #4ade80;
+}
+
+.match-result-page__outcome--lost {
+  color: #fca5a5;
+}
+
+.match-result-page__outcome--draw {
+  color: #fbbf24;
+}
+
+.match-result-page__teams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.result-team {
+  min-width: 10rem;
+  padding: 1rem 1.5rem;
+  border: 2px solid #334155;
+  border-radius: 0.75rem;
+  background: #111a33;
+}
+
+/* El equipo del usuario se distingue con borde y fondo de color */
+.result-team--own {
+  border-color: #818cf8;
+  background: #1e2a5a;
+}
+
+.result-team__name {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.result-team__goals {
+  margin: 0.5rem 0;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.result-team__badge {
+  font-size: 0.8rem;
+  color: #c7d2fe;
+}
+
+.match-result-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}

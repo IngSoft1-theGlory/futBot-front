@@ -1,0 +1,36 @@
+/* Prefijo pitch-field para no chocar con .pitch de TacticalSetup.css */
+
+.pitch-field {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+.pitch-field__surround {
+  fill: #0b241b;
+}
+
+.pitch-field__stripe--light {
+  fill: #123628;
+}
+
+.pitch-field__stripe--dark {
+  fill: #0f2e24;
+}
+
+.pitch-field__lines {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+.pitch-field__spot {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.pitch-field__goals {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: rgba(255, 255, 255, 0.85);
+}
