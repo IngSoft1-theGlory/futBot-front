@@ -8,6 +8,7 @@ import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerP
 import PlayersPage from "./pages/PlayersPage/PlayersPage"
 import FriendlyListPage from "./pages/FriendlyListPage/FriendlyListPage" 
 import CreateFriendlyPage from "./pages/CreateFriendlyPage/CreateFriendlyPage"
+import CreateLeaguePage from "./pages/CreateLeaguePage/CreateLeaguePage"
 import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
 import JoinFriendlyPage from "./pages/JoinFriendlyPage/JoinFriendlyPage"
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
@@ -34,6 +35,7 @@ function App() {
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
+        <Route path="/leagues/new" element={<CreateLeaguePage />} />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}
