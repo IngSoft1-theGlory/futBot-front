@@ -36,6 +36,10 @@ import FriendlyListPage from "./FriendlyListPage"
 
 const AMISTOSO_AJENO = { matchId: 1, teamHostId: 7, teamAwayId: null, status: "PENDING", matchDuration: 5 }
 const AMISTOSO_PROPIO = { matchId: 2, teamHostId: 5, teamAwayId: null, status: "PENDING", matchDuration: 2 }
+const AMISTOSO_CON_NOMBRES = {
+  matchId: 3, teamHostId: 8, teamHostName: "Los Pibes",
+  teamAwayId: 9, teamAwayName: "Rival FC", status: "PENDING", matchDuration: 5,
+}
 
 function respuestaCon(matches) {
   return { matches, page: 1, limit: 20, total: matches.length }
@@ -122,5 +126,24 @@ describe("FriendlyListPage en tiempo real", () => {
     })
 
     expect(await screen.findByText("Unirse al amistoso")).toBeTruthy()
+  })
+
+  it("Debería mostrar el nombre del anfitrión y del rival en la tarjeta", async () => {
+    await renderPage([AMISTOSO_AJENO, AMISTOSO_CON_NOMBRES])
+
+    const tarjeta = screen.getByText(/Los Pibes/).closest("button")
+    expect(tarjeta.textContent).toMatch(/Rival FC/)
+    expect(tarjeta.textContent).not.toMatch(/Equipo #8/)
+  })
+
+  it("Debería mostrar el nombre del anfitrión de un amistoso que llega por FRIENDLY_CREATED", async () => {
+    await renderPage([AMISTOSO_AJENO])
+
+    emit("FRIENDLY_CREATED", {
+      match_id: 12, team_host_id: 9, team_host_name: "Los Pibes", match_duration: 2, status: "PENDING",
+    })
+
+    expect(screen.getByText(/Los Pibes/)).toBeTruthy()
+    expect(screen.queryByText(/Equipo #9/)).toBeNull()
   })
 })

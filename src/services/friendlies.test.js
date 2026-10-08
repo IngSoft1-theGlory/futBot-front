@@ -60,7 +60,9 @@ describe("fetchFriendlyMatches", () => {
             {
               match_id: 1,
               team_host_id: 10,
+              team_host_name: "Local FC",
               team_away_id: 20,
+              team_away_name: "Rival FC", 
               status: "PENDING",
               match_duration: 90,
             },
@@ -75,8 +77,36 @@ describe("fetchFriendlyMatches", () => {
     const data = await fetchFriendlyMatches()
 
     expect(data.matches).toEqual([
-      { matchId: 1, teamHostId: 10, teamAwayId: 20, status: "PENDING", matchDuration: 90 },
+      {
+        matchId: 1,
+        teamHostId: 10,
+        teamHostName: "Local FC",
+        teamAwayId: 20,
+        teamAwayName: "Rival FC",
+        status: "PENDING",
+        matchDuration: 90,
+      },
     ])
+  })
+
+  it("debería dejar los nombres en null si el backend no los manda", async () => {
+    global.fetch.mockResolvedValue(
+      fakeResponse({
+        body: {
+          matches: [
+            { match_id: 1, team_host_id: 10, team_away_id: null, status: "PENDING", match_duration: 5 },
+          ],
+          page: 1,
+          limit: 20,
+          total: 1,
+        },
+      })
+    )
+
+    const data = await fetchFriendlyMatches()
+
+    expect(data.matches[0].teamHostName).toBeNull()
+    expect(data.matches[0].teamAwayName).toBeNull()
   })
 
   it("debería mantener el orden en el que vienen los matches del backend", async () => {
