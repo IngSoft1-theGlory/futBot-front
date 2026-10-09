@@ -16,7 +16,6 @@ const NETWORK_ERROR_MESSAGE =
 
 // Único lugar donde se decide qué hacer con cada código de error del contrato.
 // step: paso al que se vuelve. target: dónde se muestra el mensaje.
-// message: texto en español; si no hay, se usa el message que manda el backend.
 const ERROR_HANDLING = {
   INVALID_SETTINGS: { step: STEP_DURATION, target: "duration" },
   INVALID_CONFIGURATION: { step: STEP_TACTICAL, target: "tactical" },
@@ -42,7 +41,7 @@ function CreateFriendlyPage() {
   const [duration, setDuration] = useState(null) // minutos elegidos
   const [durationError, setDurationError] = useState("")
   const [tacticalError, setTacticalError] = useState("")
-  const [generalError, setGeneralError] = useState(null) // { message, showPlayersLink }
+  const [generalError, setGeneralError] = useState(null) 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
 
@@ -180,7 +179,7 @@ function CreateFriendlyPage() {
           </div>
         )}
 
-        {/* Paso 1: se oculta pero no se desmonta, así no se pierde lo ingresado */}
+        {/* 1) se oculta pero no se desmonta, así no se pierde lo ingresado */}
         <section hidden={step !== STEP_DURATION} aria-labelledby="duration-title">
           <form className="duration-card" onSubmit={handleDurationSubmit} noValidate>
             <h2 id="duration-title" className="duration-card__title">
@@ -225,7 +224,7 @@ function CreateFriendlyPage() {
           </form>
         </section>
 
-        {/* Paso 2: también queda montado para conservar la selección al volver al paso 1 */}
+        {/* 2) también queda montado para conservar la selección al volver al paso 1 */}
         <section hidden={step !== STEP_TACTICAL} aria-label="Configuración táctica">
           <button
             type="button"
