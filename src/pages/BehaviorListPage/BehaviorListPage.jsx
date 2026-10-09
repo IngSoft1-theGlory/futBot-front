@@ -8,7 +8,7 @@ import "./BehaviorListPage.css"
 function getBehaviorErrorMessage(err) {   // Maneja los errores al obtener el behavior
   if (err instanceof ApiError) {
     if (err.status === 403) return "No tenés permisos para ver los comportamientos."
-    return err.message   // respaldo: el mensaje del contrato
+    return err.message   // Mensaje del contrato
   }
   return "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
 }
@@ -32,7 +32,7 @@ function BehaviorListPage() {
       .catch((err) => {
         if (!isActive) return
         setError(getBehaviorErrorMessage(err))    // Setea el mensaje de error llamando a la funcion
-        setStatus("error")   
+        setStatus("error")    // Setea el estado de la pagina
       })
     
     return () => {
