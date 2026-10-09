@@ -13,6 +13,7 @@ import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
 import JoinFriendlyPage from "./pages/JoinFriendlyPage/JoinFriendlyPage"
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
 import MatchResultPage from "./pages/MatchResultPage/MatchResultPage"
+import BehaviorListPage from "./pages/BehaviorListPage/BehaviorListPage"
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
         <Route path="/leagues/new" element={<CreateLeaguePage />} />
+        <Route path="/behaviors" element={<BehaviorListPage />}  />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}
