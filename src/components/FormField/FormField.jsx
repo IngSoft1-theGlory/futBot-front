@@ -5,7 +5,7 @@ function FormField({ id, label, type = 'text', value, onChange, error, ...rest }
 
   return (
     <div className="form-field">
-      <label className="form-field__label">
+      <label htmlFor={id} className="form-field__label">
         {label}
       </label>
       <input
