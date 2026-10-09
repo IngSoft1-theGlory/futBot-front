@@ -1,0 +1,38 @@
+.behavior-card {
+  min-width: 0; /* evita que una descripción larga ensanche la grilla */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: left;
+  font: inherit;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.behavior-card:hover,
+.behavior-card:focus-visible {
+  border-color: #818cf8;
+}
+
+.behavior-card__name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+/* Trunca la descripción a 3 líneas con "..." */
+.behavior-card__description {
+  margin: 0;
+  color: #94a3b8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
