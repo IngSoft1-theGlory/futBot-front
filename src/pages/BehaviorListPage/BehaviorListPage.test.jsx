@@ -21,7 +21,6 @@ function renderPage() {
     <MemoryRouter initialEntries={["/behaviors"]}>
       <Routes>
         <Route path="/behaviors" element={<BehaviorListPage />} />
-        <Route path="/behaviors/:behaviorId" element={<p>Pantalla de detalle</p>} />
         <Route path="/" element={<p>Pantalla de inicio</p>} />
       </Routes>
     </MemoryRouter>
@@ -101,13 +100,31 @@ describe("BehaviorListPage", () => {
   })
 
   describe("Interacciones", () => {
-    it("Debería navegar al detalle del comportamiento al hacer click en su tarjeta", async () => {
-      httpService.get.mockResolvedValue(mockBehaviors)
+    it("Debería abrir el detalle y pedir GET /behaviors/{behaviorId} al hacer click en una tarjeta", async () => {
+      httpService.get
+        .mockResolvedValueOnce(mockBehaviors)      // 1° pedido: la lista
+        .mockResolvedValueOnce(mockBehaviors[0])   // 2° pedido: el detalle
       renderPage()
 
       await userEvent.click(await screen.findByRole("button", { name: /atacar arco/i }))
 
-      expect(screen.getByText("Pantalla de detalle")).toBeInTheDocument()
+      expect(httpService.get).toHaveBeenLastCalledWith("/behaviors/1")
+      expect(await screen.findByText("def on_tick(api): pass")).toBeInTheDocument()
+      expect(screen.queryAllByTestId("behavior-card")).toHaveLength(0)
+    })
+
+    it("Debería volver a la colección sin volver a pedir la lista", async () => {
+      httpService.get
+        .mockResolvedValueOnce(mockBehaviors)
+        .mockResolvedValueOnce(mockBehaviors[0])
+      renderPage()
+
+      await userEvent.click(await screen.findByRole("button", { name: /atacar arco/i }))
+      await screen.findByText("def on_tick(api): pass")
+      await userEvent.click(screen.getByRole("button", { name: /volver a la colección/i }))
+
+      expect(screen.getAllByTestId("behavior-card")).toHaveLength(2)
+      expect(httpService.get).toHaveBeenCalledTimes(2)   // la lista una sola vez + el detalle
     })
 
     it("Debería volver al inicio con el enlace 'Volver al inicio'", async () => {

@@ -17,15 +17,24 @@ function readStoredSession() {
 function SessionProvider({ children }) {
   // Al cargar la app, se recupera la sesión guardada (si existe)
   const [session, setSessionState] = useState(readStoredSession)
+  // true cuando la sesión venció (401). El login lo usa para avisarle al usuario.
+  const [sessionExpired, setSessionExpired] = useState(false)
 
-  // Si createHttpService detecta un 401 de sesión, se limpia el estado.
-  // Las rutas protegidas redirigen solas al login.
-  useEffect(() => onSessionExpired(() => setSessionState(null)), [])
+  // Si createHttpService detecta un 401 de sesión, se limpia el estado y se marca
+  // que la sesión venció. Las rutas protegidas redirigen solas al login.
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => {
+      setSessionState(null)
+      setSessionExpired(true)
+    })
+    return unsubscribe   // Al desmontar, deja de escuchar
+  }, [])
 
   // Se usa desde el login al recibir 200 OK de POST /auth/login
   const startSession = useCallback(({ token, tokenType, user }) => {
     setSession({ token, tokenType, user })
     setSessionState({ token, tokenType, user })
+    setSessionExpired(false)   // Volvió a iniciar sesión: ya no hace falta el aviso
   }, [])
 
   const logout = useCallback(async () => {
@@ -43,10 +52,11 @@ function SessionProvider({ children }) {
     () => ({
       user: session?.user ?? null,
       isAuthenticated: Boolean(session),
+      sessionExpired,
       startSession,
       logout,
     }),
-    [session, startSession, logout]
+    [session, sessionExpired, startSession, logout]
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
