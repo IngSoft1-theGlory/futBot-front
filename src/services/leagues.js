@@ -1,6 +1,6 @@
 import { httpService } from "./createhttpService"
 
-export const LEAGUE_STATUS_PENDING = "Pending"
+export const LEAGUE_STATUS_PENDING = "PENDING"
 export const LEAGUE_PAGE_DEFAULT = 1
 export const LEAGUE_LIMIT_DEFAULT = 20
 
@@ -9,7 +9,7 @@ function leagueMapping(league) {
   return {
     leagueId: league.league_id,
     leagueName: league.league_name,
-    teamsCurrent: league.teams_current,
+    teamsCurrent: league.current_teams_count,
     maxTeams: league.max_teams,
     isPrivate: league.is_private,
   }
@@ -20,7 +20,7 @@ export function isLeagueFull(league) {
   return league.teamsCurrent >= league.maxTeams
 }
 
-// GET /leagues?status=Pending&page=1&limit=20, el token de sesion lo agrega httpService solo
+// GET /leagues?status=PENDING&page=1&limit=20, el token de sesion lo agrega httpService solo
 export async function fetchLeagues({ page = LEAGUE_PAGE_DEFAULT, limit = LEAGUE_LIMIT_DEFAULT } = {}) {
   const query = new URLSearchParams({ status: LEAGUE_STATUS_PENDING, page, limit })
   const data = await httpService.get(`/leagues?${query}`)
