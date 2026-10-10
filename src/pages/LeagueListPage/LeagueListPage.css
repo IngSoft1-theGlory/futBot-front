@@ -1,0 +1,13 @@
+.league-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #94a3b8;
+}
+
+/* Liga llena: se ve apagada y no se puede seleccionar */
+.friendly-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
