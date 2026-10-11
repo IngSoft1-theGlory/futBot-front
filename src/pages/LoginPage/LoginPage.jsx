@@ -33,7 +33,7 @@ function validate(values) {
 // useState es un hook que permite manejar estados.
 // useNavigate es un hook que permite navegar de un ruta hacia otra.
 function LoginPage() {
-  const { startSession } = useSession()
+  const { startSession, sessionExpired } = useSession()   // sessionExpired: true si se llegó acá porque la sesión venció
   const navigate = useNavigate()    
   const [values, setValues] = useState(INITIAL_VALUES)      // Estado que almacena los valores de los campos del formulario
   const [generalError, setGeneralError] = useState("")      // Estado que almacena el error general 
@@ -105,6 +105,12 @@ function LoginPage() {
         <p className="login-card__brand">FutBot</p>
         <h1 className="login-card__title">Iniciar sesión</h1>
       </header>
+
+      {sessionExpired && (
+        <p className="login-card__alert login-card__alert--warning" role="status">
+          Tu sesión expiró. Iniciá sesión de nuevo.
+        </p>
+      )}
 
       {generalError && (
         <p className="login-card__alert login-card__alert--error" role="alert">
