@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useLeagues } from "../../hooks/useLeagues"
 import { isLeagueFull } from "../../services/leagues"
@@ -9,13 +9,16 @@ import "./LeagueListPage.css"
 function LeagueListPage() {
   const { leagues, isLoading, error, page, hasNextPage, goToPreviousPage, goToNextPage } = useLeagues()
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const notice = state?.message // aviso al volver de otra pantalla (ej: la liga ya no existe)
 
   // privada: primero se verifica la contraseña, publica: directo a la inscripcion
   function onSelectLeague(league) {
+    const state = { leagueName: league.leagueName }
     if (league.isPrivate) {
-      navigate(`/leagues/${league.leagueId}/verify-password`)
+      navigate(`/leagues/${league.leagueId}/verify-password`, { state })
     } else {
-      navigate(`/leagues/${league.leagueId}/join`)
+      navigate(`/leagues/${league.leagueId}/join`, { state })
     }
   }
 
@@ -26,6 +29,12 @@ function LeagueListPage() {
       <header className="friendly-list-page__header">
         <h1 className="friendly-list-page__title">Ligas Disponibles</h1>
       </header>
+
+      {notice && (
+        <p className="friendly-list-page__error" role="alert">
+          {notice}
+        </p>
+      )}
 
       {error && (
         <p className="friendly-list-page__error" role="alert">

@@ -13,6 +13,7 @@ import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
 import JoinFriendlyPage from "./pages/JoinFriendlyPage/JoinFriendlyPage"
 import LeagueListPage from "./pages/LeagueListPage/LeagueListPage"
 import JoinLeaguePage from "./pages/JoinLeaguePage/JoinLeaguePage"
+import VerifyLeaguePasswordPage from "./pages/VerifyLeaguePasswordPage/VerifyLeaguePasswordPage"
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
 import MatchResultPage from "./pages/MatchResultPage/MatchResultPage"
 import BehaviorListPage from "./pages/BehaviorListPage/BehaviorListPage"
@@ -39,6 +40,7 @@ function App() {
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
         <Route path="/leagues" element={<LeagueListPage />} />
+        <Route path="/leagues/:leagueId/verify-password" element={<VerifyLeaguePasswordPage />} />
         <Route path="/leagues/:leagueId/join" element={<JoinLeaguePage />} />
         <Route path="/leagues/new" element={<CreateLeaguePage />} />
         <Route path="/behaviors" element={<BehaviorListPage />}  />
