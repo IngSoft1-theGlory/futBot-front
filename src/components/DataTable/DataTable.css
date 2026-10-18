@@ -1,0 +1,58 @@
+/* Si la tabla es más ancha que la pantalla, se scrollea de costado
+   en vez de romper el resto de la página */
+.data-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse; /* bordes de celdas pegados, sin doble línea */
+  color: #e2e8f0;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.data-table th {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+/* La última fila no lleva línea abajo: ya la cierra el borde del contenedor */
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table__cell--left {
+  text-align: left;
+}
+
+.data-table__cell--center {
+  text-align: center;
+}
+
+.data-table__cell--right {
+  text-align: right;
+}
+
+/* Fila resaltada (por ejemplo, el equipo del usuario) */
+.data-table__row--highlighted {
+  background: rgba(99, 102, 241, 0.18);
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.data-table__empty {
+  text-align: center;
+  color: #94a3b8;
+}
