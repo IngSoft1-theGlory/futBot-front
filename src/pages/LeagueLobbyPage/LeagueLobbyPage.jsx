@@ -3,12 +3,17 @@ import { useParams, useNavigate, Link, Navigate } from "react-router-dom"
 import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
 import { useGlobalEvent } from "../../hooks/useGlobalEvent"
+import { useLeagueInProgressEvents } from "../../hooks/useLeagueInProgressEvents"
 import "./LeagueLobbyPage.css"
 
 const NETWORK_ERROR_MESSAGE =
   "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
 
-const STATUS_LABELS = { PENDING: "Esperando equipos" }
+const STATUS_LABELS = {
+  PENDING: "Esperando equipos",
+  IN_PROGRESS: "En curso",
+  FINISHED: "Finalizada",
+}
 
 function getErrorsMessages(err) {
   if (err instanceof ApiError) {
@@ -76,6 +81,9 @@ function useLeagueLobby(leagueId) {
   }
   useGlobalEvent("TEAM_JOINED_LEAGUE", handleLobbyEvent)
   useGlobalEvent("LEAVE_LOBBY_LEAGUE", handleLobbyEvent)
+
+  // Eventos de la liga en curso: partidos que empiezan o terminan y fin de la liga
+  useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
 
   return { league, status, error }
 }

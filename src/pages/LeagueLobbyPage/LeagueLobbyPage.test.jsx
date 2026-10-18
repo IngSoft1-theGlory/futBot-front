@@ -58,6 +58,19 @@ function armarLiga(teams, isPrivate = false) {
   }
 }
 
+// Liga ya iniciada: además de los datos del lobby trae la tabla (ranking) y los partidos (fixture).
+// Las filas del fixture tienen solo el campo que usan los eventos (match_id).
+// cambios: campos a reemplazar, por ejemplo { status: "FINISHED" }
+function armarLigaEnCurso(cambios = {}) {
+  return {
+    ...armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]),
+    status: "IN_PROGRESS",
+    ranking: [],
+    fixture: [{ match_id: 21 }, { match_id: 22 }],
+    ...cambios,
+  }
+}
+
 // ---------- Helpers ----------
 
 function renderPage(leagueId = "3") {
@@ -84,6 +97,15 @@ async function abrirLobby() {
   httpService.get.mockResolvedValue(armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]))
   const resultado = renderPage("3")
   await screen.findByText("Liga FAMAF Apertura")
+  return resultado
+}
+
+// Renderiza el lobby de una liga en curso ya cargada.
+// Si el test preparó respuestas con mockResolvedValueOnce, se usan esas primero.
+async function abrirLigaEnCurso() {
+  httpService.get.mockResolvedValue(armarLigaEnCurso())
+  const resultado = renderPage("3")
+  await screen.findByText("En curso")
   return resultado
 }
 
@@ -240,6 +262,79 @@ describe("LeagueLobbyPage", () => {
 
       expect(httpService.get).toHaveBeenCalledTimes(2)
       expect(screen.getByText("BocaJuniors")).toBeTruthy()
+      expect(screen.queryByRole("alert")).toBeNull()
+    })
+  })
+
+  describe("Liga en curso", () => {
+    it("Debería volver a pedir la liga cuando empieza un partido de su fixture", async () => {
+      await abrirLigaEnCurso()
+
+      await emitirEvento("MATCH_STARTED", { match_id: 21 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(2)
+      expect(httpService.get).toHaveBeenLastCalledWith("/leagues/3")
+    })
+
+    it("Debería ignorar MATCH_STARTED de partidos que no están en el fixture, como un amistoso", async () => {
+      await abrirLigaEnCurso()
+
+      await emitirEvento("MATCH_STARTED", { match_id: 999 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(1)
+    })
+
+    it("Debería buscar el partido en el último fixture que se cargó", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLigaEnCurso())
+        .mockResolvedValueOnce(armarLigaEnCurso({ fixture: [{ match_id: 21 }, { match_id: 23 }] }))
+      await abrirLigaEnCurso()
+
+      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 3 })
+      await emitirEvento("MATCH_STARTED", { match_id: 23 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(3)
+    })
+
+    it("Debería volver a pedir la liga cuando termina uno de sus partidos", async () => {
+      await abrirLigaEnCurso()
+
+      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 3 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(2)
+    })
+
+    it("Debería mostrar la liga como finalizada cuando termina", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLigaEnCurso())
+        .mockResolvedValueOnce(armarLigaEnCurso({ status: "FINISHED" }))
+      await abrirLigaEnCurso()
+
+      await emitirEvento("LEAGUE_FINISHED", { league_id: 3 })
+
+      expect(screen.getByText("Finalizada")).toBeTruthy()
+      expect(screen.queryByText("En curso")).toBeNull()
+    })
+
+    it("Debería ignorar los eventos de otras ligas", async () => {
+      await abrirLigaEnCurso()
+
+      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 999 })
+      await emitirEvento("LEAGUE_FINISHED", { league_id: 999 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(1)
+    })
+
+    it("Debería conservar lo que estaba en pantalla, sin mostrar error, si falla el refetch", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLigaEnCurso())
+        .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      await abrirLigaEnCurso()
+
+      await emitirEvento("LEAGUE_FINISHED", { league_id: 3 })
+
+      expect(httpService.get).toHaveBeenCalledTimes(2)
+      expect(screen.getByText("En curso")).toBeTruthy()
       expect(screen.queryByRole("alert")).toBeNull()
     })
   })
