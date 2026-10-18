@@ -11,7 +11,7 @@ const STATUS_LABELS = {
 
 const EMPTY_MESSAGE = "Todavía no hay partidos en el fixture."
 /*
- junta los partidos que se juegan en la misma fecha (match.round)
+ junta los partidos que se juegan en la misma fecha (match.round_number)
  Devuelve los grupos ordenados por fecha:
    [{ round: 1, matches: [...] }, { round: 2, matches: [...] }]
 */
@@ -20,11 +20,11 @@ function groupMatchesByRound(fixture) {
 
   for (const match of fixture) {
     // busca si ya existe el grupo de la fecha de este partido
-    let group = groups.find((item) => item.round === match.round)
+    let group = groups.find((item) => item.round === match.round_number)
 
     // Si es el primer partido de esa fecha, crea el grupo
     if (!group) {
-      group = { round: match.round, matches: [] }
+      group = { round: match.round_number, matches: [] }
       groups.push(group)
     }
 
@@ -39,14 +39,14 @@ function groupMatchesByRound(fixture) {
 // el marcador se muestra cuando el partido termino, antes se muestra "vs"
 function getScoreText(match) {
   if (match.status === "FINISHED") {
-    return `${match.home_goals} - ${match.away_goals}`
+    return `${match.score.home} - ${match.score.away}`
   }
   return "vs"
 }
 
 // true si el equipo del usuario juega este partido (de local o de visitante)
 function isUserMatch(match, teamId) {
-  return match.team_host_id === teamId || match.team_away_id === teamId
+  return match.team_host.team_id === teamId || match.team_away.team_id === teamId
 }
 
 // El boton para entrar aparece solo en los partidos del usuario que se están jugando
@@ -61,9 +61,9 @@ function FixtureMatch({ match, teamId }) {
   return (
     <li className="fixture__match">
       <div className="fixture__teams">
-        <span className="fixture__team fixture__team--home">{match.team_host_name}</span>
+        <span className="fixture__team fixture__team--home">{match.team_host.team_name}</span>
         <span className="fixture__score">{getScoreText(match)}</span>
-        <span className="fixture__team fixture__team--away">{match.team_away_name}</span>
+        <span className="fixture__team fixture__team--away">{match.team_away.team_name}</span>
       </div>
 
       <span className="fixture__status">{STATUS_LABELS[match.status]}</span>

@@ -11,18 +11,24 @@ const BOTON_ACCEDER = "Acceder al partido"
 
 // Arma un partido del fixture tal como lo manda el backend.
 // cambios: campos a reemplazar, por ejemplo { status: "FINISHED" }
-function armarPartido(cambios = {}) {
+function armarPartido({
+  match_id = 21,
+  round = 1,
+  status = "PENDING",
+  team_host_id = MI_EQUIPO,
+  team_host_name = "Los Pibes",
+  team_away_id = 7,
+  team_away_name = "Rival FC",
+  home_goals = 0,
+  away_goals = 0,
+} = {}) {
   return {
-    match_id: 21,
-    round: 1,
-    status: "PENDING",
-    team_host_id: MI_EQUIPO,
-    team_host_name: "Los Pibes",
-    team_away_id: 7,
-    team_away_name: "Rival FC",
-    home_goals: 0,
-    away_goals: 0,
-    ...cambios,
+    match_id,
+    round_number: round,
+    status,
+    team_host: { team_id: team_host_id, team_name: team_host_name },
+    team_away: { team_id: team_away_id, team_name: team_away_name },
+    score: { home: home_goals, away: away_goals },
   }
 }
 
