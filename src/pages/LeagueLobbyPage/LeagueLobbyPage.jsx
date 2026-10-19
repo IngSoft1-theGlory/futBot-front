@@ -4,6 +4,7 @@ import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
 import { useGlobalEvent } from "../../hooks/useGlobalEvent"
 import { useLeagueInProgressEvents } from "../../hooks/useLeagueInProgressEvents"
+import LeagueInProgressView from "./LeagueInProgressView"
 import "./LeagueLobbyPage.css"
 
 const NETWORK_ERROR_MESSAGE =
@@ -136,8 +137,11 @@ function LeagueLobbyPage() {
 
   if (!isMember && league.is_private) return <Navigate to="/" replace />
 
+  // PENDING: sala de espera. IN_PROGRESS o FINISHED: tabla, fixture y alineación
+  const isWaitingRoom = league.status === "PENDING"
+
   return (
-    <main className="league-lobby">
+    <main className={`league-lobby${isWaitingRoom ? "" : " league-lobby--in-progress"}`}>
       <header className="league-lobby__header">
         <h1>{league.league_name}</h1>
         <span className="league-lobby__status">
@@ -155,41 +159,47 @@ function LeagueLobbyPage() {
         </p>
       </section>
 
-      <ul className="league-lobby__teams">
-        {league.teams.map((team) => {
-          const isOwn = team.team_id === user?.team_id
-          const isTeamHost = team.team_id === league.host_team_id
+      {isWaitingRoom ? (
+        <>
+          <ul className="league-lobby__teams">
+            {league.teams.map((team) => {
+              const isOwn = team.team_id === user?.team_id
+              const isTeamHost = team.team_id === league.host_team_id
 
-          return (
-            <li
-              key={team.team_id}
-              className={`league-lobby__team${isOwn ? " league-lobby__team--own" : ""}`}
+              return (
+                <li
+                  key={team.team_id}
+                  className={`league-lobby__team${isOwn ? " league-lobby__team--own" : ""}`}
+                >
+                  <span className="league-lobby__team-name">{team.team_name}</span>
+                  <span className="league-lobby__badges">
+                    {isTeamHost && <span className="league-lobby__badge">Anfitrión</span>}
+                    {isOwn && <span className="league-lobby__badge">Tu equipo</span>}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+
+          {leaveError && (
+            <p className="league-lobby__error" role="alert">
+              {leaveError}
+            </p>
+          )}
+
+          {isMember && !isHost && (
+            <button
+              type="button"
+              className="league-lobby__leave"
+              onClick={handleLeave}
+              disabled={isLeaving}
             >
-              <span className="league-lobby__team-name">{team.team_name}</span>
-              <span className="league-lobby__badges">
-                {isTeamHost && <span className="league-lobby__badge">Anfitrión</span>}
-                {isOwn && <span className="league-lobby__badge">Tu equipo</span>}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-
-      {leaveError && (
-        <p className="league-lobby__error" role="alert">
-          {leaveError}
-        </p>
-      )}
-
-      {isMember && !isHost && (
-        <button
-          type="button"
-          className="league-lobby__leave"
-          onClick={handleLeave}
-          disabled={isLeaving}
-        >
-          {isLeaving ? "Saliendo..." : "Abandonar liga"}
-        </button>
+              {isLeaving ? "Saliendo..." : "Abandonar liga"}
+            </button>
+          )}
+        </>
+      ) : (
+        <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
       )}
     </main>
   )
