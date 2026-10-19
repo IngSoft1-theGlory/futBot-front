@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, Navigate } from "react-router-dom"
 import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
 import { useGlobalEvent } from "../../hooks/useGlobalEvent"
-import { useLeagueInProgressEvents } from "../../hooks/useLeagueInProgressEvents"
+import ConfirmButton from "../../components/ConfirmButton/ConfirmButton"
 import "./LeagueLobbyPage.css"
 
 const NETWORK_ERROR_MESSAGE =
@@ -82,9 +82,6 @@ function useLeagueLobby(leagueId) {
   useGlobalEvent("TEAM_JOINED_LEAGUE", handleLobbyEvent)
   useGlobalEvent("LEAVE_LOBBY_LEAGUE", handleLobbyEvent)
 
-  // Eventos de la liga en curso: partidos que empiezan o terminan y fin de la liga
-  useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
-
   return { league, status, error }
 }
 
@@ -98,14 +95,12 @@ function LeagueLobbyPage() {
   const [leaveError, setLeaveError] = useState(null)
 
   async function handleLeave() {
-    if (!window.confirm("¿Seguro que querés abandonar la liga?")) return
-
     setIsLeaving(true)
     setLeaveError(null)
 
     try {
       await httpService.delete(`/leagues/${leagueId}/teams/${user.team_id}`)
-      navigate("/", { replace: true })
+      navigate("/leagues", { replace: true })
     } catch (err) {
       setLeaveError(getErrorsMessages(err))
       setIsLeaving(false)
@@ -182,14 +177,13 @@ function LeagueLobbyPage() {
       )}
 
       {isMember && !isHost && (
-        <button
-          type="button"
-          className="league-lobby__leave"
-          onClick={handleLeave}
-          disabled={isLeaving}
-        >
-          {isLeaving ? "Saliendo..." : "Abandonar liga"}
-        </button>
+        <ConfirmButton
+          label={isLeaving ? "Saliendo..." : "Abandonar liga"}
+          confirmMessage="¿Seguro que queres abandonar la liga?"
+          onConfirm={handleLeave}
+          isLoading={isLeaving}
+          variant="danger"
+        />
       )}
     </main>
   )
