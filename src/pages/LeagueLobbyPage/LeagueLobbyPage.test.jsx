@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, cleanup, act, fireEvent } from "@testing-library/react"
+import { render, screen, cleanup, act, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 vi.mock("../../services/createhttpService", async (importOriginal) => {
@@ -58,15 +58,43 @@ function armarLiga(teams, isPrivate = false) {
   }
 }
 
+// Un partido del fixture, con el formato que manda el backend
+function armarPartido(matchId) {
+  return {
+    match_id: matchId,
+    round_number: 1,
+    status: "PENDING",
+    team_host: EQUIPO_ANFITRION,
+    team_away: EQUIPO_INVITADO,
+    score: { home: 0, away: 0 },
+  }
+}
+
+// Una fila de la tabla de posiciones, con el formato que manda el backend
+function armarPosicion(position, team, points) {
+  return {
+    position,
+    team_id: team.team_id,
+    team_name: team.team_name,
+    matches_played: 1,
+    wins: points === 3 ? 1 : 0,
+    draws: 0,
+    losses: points === 3 ? 0 : 1,
+    goals_for: points === 3 ? 2 : 0,
+    goals_against: points === 3 ? 0 : 2,
+    goal_diff: points === 3 ? 2 : -2,
+    points,
+  }
+}
+
 // Liga ya iniciada: además de los datos del lobby trae la tabla (ranking) y los partidos (fixture).
-// Las filas del fixture tienen solo el campo que usan los eventos (match_id).
 // cambios: campos a reemplazar, por ejemplo { status: "FINISHED" }
 function armarLigaEnCurso(cambios = {}) {
   return {
     ...armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]),
     status: "IN_PROGRESS",
-    ranking: [],
-    fixture: [{ match_id: 21 }, { match_id: 22 }],
+    ranking: [armarPosicion(1, EQUIPO_INVITADO, 3), armarPosicion(2, EQUIPO_ANFITRION, 0)],
+    fixture: [armarPartido(21), armarPartido(22)],
     ...cambios,
   }
 }
@@ -78,6 +106,7 @@ function renderPage(leagueId = "3") {
     <MemoryRouter initialEntries={[`/leagues/${leagueId}`]}>
       <Routes>
         <Route path="/leagues/:leagueId" element={<LeagueLobbyPage />} />
+        <Route path="/leagues/:leagueId/lineup" element={<h1>Editar alineación de la liga</h1>} />
         <Route path="/" element={<h1>Pantalla principal</h1>} />
       </Routes>
     </MemoryRouter>
@@ -266,6 +295,45 @@ describe("LeagueLobbyPage", () => {
     })
   })
 
+  describe("Pantalla de la liga en curso", () => {
+    it("Debería mostrar la tabla de posiciones, el fixture y el botón para editar la alineación", async () => {
+      await abrirLigaEnCurso()
+
+      expect(screen.getByRole("heading", { name: "Tabla de posiciones" })).toBeTruthy()
+      const tabla = screen.getByRole("table")
+      expect(within(tabla).getByText("BocaJuniors")).toBeTruthy()
+      expect(within(tabla).getByText("+2")).toBeTruthy()
+
+      expect(screen.getByRole("heading", { name: "Fixture" })).toBeTruthy()
+      expect(screen.getByText("Fecha 1")).toBeTruthy()
+
+      expect(screen.getByRole("button", { name: "Editar alineación" })).toBeTruthy()
+    })
+
+    it("Debería llevar a la edición de la alineación al presionar el botón", async () => {
+      await abrirLigaEnCurso()
+
+      fireEvent.click(screen.getByRole("button", { name: "Editar alineación" }))
+
+      expect(screen.getByText("Editar alineación de la liga")).toBeTruthy()
+    })
+
+    it("Debería seguir mostrando la sala de espera, sin tabla ni fixture, si la liga está en PENDING", async () => {
+      await abrirLobby()
+
+      expect(screen.getByText("Esperando equipos")).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Abandonar liga" })).toBeTruthy()
+      expect(screen.queryByRole("heading", { name: "Tabla de posiciones" })).toBeNull()
+      expect(screen.queryByRole("heading", { name: "Fixture" })).toBeNull()
+    })
+
+    it("Debería no permitir abandonar la liga una vez iniciada", async () => {
+      await abrirLigaEnCurso()
+
+      expect(screen.queryByRole("button", { name: "Abandonar liga" })).toBeNull()
+    })
+  })
+
   describe("Liga en curso", () => {
     it("Debería volver a pedir la liga cuando empieza un partido de su fixture", async () => {
       await abrirLigaEnCurso()
@@ -287,7 +355,7 @@ describe("LeagueLobbyPage", () => {
     it("Debería buscar el partido en el último fixture que se cargó", async () => {
       httpService.get
         .mockResolvedValueOnce(armarLigaEnCurso())
-        .mockResolvedValueOnce(armarLigaEnCurso({ fixture: [{ match_id: 21 }, { match_id: 23 }] }))
+        .mockResolvedValueOnce(armarLigaEnCurso({ fixture: [armarPartido(21), armarPartido(23)] }))
       await abrirLigaEnCurso()
 
       await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 3 })
