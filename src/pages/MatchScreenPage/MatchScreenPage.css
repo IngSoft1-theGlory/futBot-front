@@ -30,6 +30,17 @@
   border-radius: 0.5rem;
 }
 
+/* Aviso de pausa (tipo de pausa y segundos restantes) */
+.match-page__pause {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  color: #e2e8f0;
+  background: #1e40af;
+  border-radius: 0.5rem;
+  font-variant-numeric: tabular-nums; /* dígitos del mismo ancho: la cuenta regresiva no "baila" */
+}
+
 /* Cancha a la izquierda y panel del jugador a la derecha (abajo en pantallas chicas) */
 .match-page__content {
   display: flex;

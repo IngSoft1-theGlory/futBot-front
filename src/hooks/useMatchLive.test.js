@@ -1,0 +1,153 @@
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { renderHook, act, cleanup } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
+/*
+// ---------- Mocks ----------
+Se reemplazan los pedidos HTTP y el canal global, la conexion en vivo usa el matchSockets.js real, pero con un WebSocket falso que el test maneja para simular los mensajes del servidor
+*/
+vi.mock("../services/matches", () => ({
+  fetchMatchState: vi.fn(),
+  fetchMatchTeams: vi.fn(),
+  requestMatchWebsocketUrl: vi.fn(),
+}))
+
+vi.mock("./useGlobalEvent", () => ({ useGlobalEvent: vi.fn() }))
+
+import { fetchMatchState, fetchMatchTeams, requestMatchWebsocketUrl } from "../services/matches"
+import { useMatchLive } from "./useMatchLive"
+
+class FakeWebSocket {
+  static lastInstance = null
+
+  constructor(url) {
+    this.url = url
+    FakeWebSocket.lastInstance = this
+  }
+
+  close() {}
+
+  // simula que el servidor manda un mensaje por el canal del partido
+  receive(message) {
+    this.onmessage?.({ data: JSON.stringify(message) })
+  }
+}
+
+// ---------- Datos de Prueba ----------
+
+const TEAMS = {
+  home: { id: 1, name: "Instituto", logo: null },
+  away: { id: 2, name: "InterdeMilan", logo: null },
+}
+
+const MATCH_IN_PROGRESS = {
+  currentTick: 600,
+  totalTicks: 1200,
+  score: { home: 1, away: 0 },
+  ball: { x: 52.5, y: 34 },
+  players: [{ player_id: 101, team_id: 1, name: "Giuliano Cerato", position: { x: 50, y: 30 }, current_action: "IDLE" }],
+  pause: null,
+}
+
+const PAUSE_STARTED = { event: "PAUSE_STARTED", type: "HT", duration_seconds: 30, current_tick: 600 }
+const PAUSE_FINISHED = { event: "PAUSE_FINISHED", type: "HT" }
+
+// Un tick que, si se aplicara, cambiaría el marcador, el reloj y la cancha
+const NEXT_TICK = {
+  event: "TICK_UPDATE",
+  current_tick: 601,
+  total_ticks: 1200,
+  score: { home: 2, away: 0 },
+  ball: { x: 80, y: 20 },
+  players: [{ player_id: 101, team_id: 1, position: { x: 70, y: 25 }, current_action: "RUN" }],
+}
+
+// ---------- Helpers ----------
+
+// Deja que terminen los pedidos pendientes (carga inicial y token del websocket)
+async function flush() {
+  await act(() => vi.advanceTimersByTimeAsync(0))
+}
+
+// Avanza el reloj falso la cantidad de segundos indicada
+async function waitSeconds(seconds) {
+  await act(() => vi.advanceTimersByTimeAsync(seconds * 1000))
+}
+
+function serverSends(message) {
+  act(() => FakeWebSocket.lastInstance.receive(message))
+}
+
+async function renderMatchLive(initialState) {
+  fetchMatchState.mockResolvedValue(initialState)
+  const { result } = renderHook(() => useMatchLive("12"), { wrapper: MemoryRouter })
+  await flush()
+  return result
+}
+
+// ---------- Tests ----------
+
+describe("useMatchLive - pausas", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubGlobal("WebSocket", FakeWebSocket)
+    FakeWebSocket.lastInstance = null
+    fetchMatchTeams.mockResolvedValue(TEAMS)
+    requestMatchWebsocketUrl.mockResolvedValue("ws://localhost:8000/ws/v1/matches/12?token=t1")
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  it("Debería registrar el tipo y los segundos con PAUSE_STARTED, y volver a 'sin pausa' con PAUSE_FINISHED", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    expect(result.current.match.pause).toBeNull()
+
+    serverSends(PAUSE_STARTED)
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 30 })
+
+    serverSends(PAUSE_FINISHED)
+    expect(result.current.match.pause).toBeNull()
+  })
+
+  it("Debería descontar un segundo por segundo y quedarse en 0 hasta que llegue PAUSE_FINISHED", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    serverSends({ ...PAUSE_STARTED, duration_seconds: 3 })
+
+    await waitSeconds(1)
+    expect(result.current.match.pause.remainingSeconds).toBe(2)
+
+    await waitSeconds(5)
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 0 })
+  })
+
+  it("Debería mantener congelados marcador, reloj y cancha durante la pausa, y actualizarlos al terminar", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    serverSends(PAUSE_STARTED)
+
+    serverSends(NEXT_TICK)
+    expect(result.current.match.currentTick).toBe(600)
+    expect(result.current.match.score).toEqual({ home: 1, away: 0 })
+    expect(result.current.match.ball).toEqual({ x: 52.5, y: 34 })
+    expect(result.current.match.players[0].position).toEqual({ x: 50, y: 30 })
+
+    serverSends(PAUSE_FINISHED)
+    serverSends(NEXT_TICK)
+    expect(result.current.match.currentTick).toBe(601)
+    expect(result.current.match.score).toEqual({ home: 2, away: 0 })
+  })
+
+  it("Debería reflejar una pausa ya empezada al entrar, con el tiempo restante de /state", async () => {
+    const result = await renderMatchLive({ ...MATCH_IN_PROGRESS, pause: { type: "HT", remainingSeconds: 42 } })
+
+    expect(result.current.status).toBe("ready")
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 42 })
+
+    await waitSeconds(2)
+    expect(result.current.match.pause.remainingSeconds).toBe(40)
+  })
+})
