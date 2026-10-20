@@ -1,0 +1,81 @@
+/* ==========================================================
+   Lobby de liga en curso: tabla de posiciones, fixture y
+   acceso a editar la alineación. Mismo estilo que el lobby.
+   ========================================================== */
+
+/* La liga en curso usa más ancho: la tabla tiene muchas columnas */
+.league-lobby--in-progress {
+  --lobby-width: 960px;
+  justify-content: flex-start;
+}
+
+/* Editar alineación */
+.league-progress__actions {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  max-width: var(--lobby-width);
+  padding: 1rem 1.75rem;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.league-progress__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c7d2fe;
+}
+
+/* Cada bloque: tabla de posiciones y fixture */
+.league-progress__section {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: var(--lobby-width);
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.league-progress__title {
+  margin: 0;
+  text-align: left;
+  font-size: 1.15rem;
+  color: #f8fafc;
+}
+
+/* Dentro de la tarjeta, la tabla no necesita su propio fondo */
+.league-progress__section .data-table-container {
+  background: transparent;
+}
+
+.league-progress__points {
+  color: #f8fafc;
+}
+
+@media (max-width: 480px) {
+  .league-progress__actions,
+  .league-progress__section {
+    padding: 1.25rem 1rem;
+  }
+
+  .league-progress__actions .btn {
+    width: 100%;
+  }
+
+  /* Celdas más angostas para que entren más columnas sin desplazar */
+  .league-progress__section .data-table th,
+  .league-progress__section .data-table td {
+    padding: 0.6rem 0.5rem;
+  }
+}
