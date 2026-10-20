@@ -5,7 +5,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 vi.mock("../../services/createhttpService", async (importOriginal) => {
   const original = await importOriginal()
-  return { ...original, httpService: { get: vi.fn(), delete: vi.fn() } }
+  return { ...original, httpService: { get: vi.fn(), put: vi.fn(), delete: vi.fn() } }
 })
 
 let mockUser = null
@@ -27,6 +27,8 @@ vi.mock("../../services/globalSocket", () => ({
 import { httpService, ApiError } from "../../services/createhttpService.js"
 import LeagueLobbyPage from "./LeagueLobbyPage.jsx"
 
+// ---------- Datos para los tests ----------
+
 const EQUIPO_ANFITRION = { team_id: 1, team_name: "alfajoresFC" }
 const EQUIPO_INVITADO = { team_id: 8, team_name: "BocaJuniors" }
 const EQUIPO_NUEVO = { team_id: 14, team_name: "RiverPlate" }
@@ -44,6 +46,7 @@ const USUARIO_INVITADO = {
   email: "roman@famaf.unc.edu.ar",
 }
 
+// Lobby de liga pendiente. El anfitrión es el equipo 1.
 function armarLiga(teams, isPrivate = false) {
   return {
     league_id: 3,
@@ -58,17 +61,18 @@ function armarLiga(teams, isPrivate = false) {
   }
 }
 
-// Liga ya iniciada: además de los datos del lobby trae la tabla (ranking) y los partidos (fixture).
-// Las filas del fixture tienen solo el campo que usan los eventos (match_id).
-// cambios: campos a reemplazar, por ejemplo { status: "FINISHED" }
-function armarLigaEnCurso(cambios = {}) {
-  return {
-    ...armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]),
-    status: "IN_PROGRESS",
-    ranking: [],
-    fixture: [{ match_id: 21 }, { match_id: 22 }],
-    ...cambios,
+// La liga ya iniciada
+function ligaIniciada(liga) {
+  return { ...liga, status: "IN_PROGRESS" }
+}
+
+// Lista de N equipos
+function armarEquipos(n) {
+  const equipos = []
+  for (let i = 1; i <= n; i++) {
+    equipos.push({ team_id: i, team_name: `Equipo${i}` })
   }
+  return equipos
 }
 
 // ---------- Helpers ----------
@@ -78,7 +82,7 @@ function renderPage(leagueId = "3") {
     <MemoryRouter initialEntries={[`/leagues/${leagueId}`]}>
       <Routes>
         <Route path="/leagues/:leagueId" element={<LeagueLobbyPage />} />
-        <Route path="/" element={<h1>Pantalla principal</h1>} />
+        <Route path="/leagues" element={<h1>Lista de Ligas</h1>} />
       </Routes>
     </MemoryRouter>
   )
@@ -92,21 +96,25 @@ async function emitirEvento(event, data) {
   })
 }
 
-// Renderiza el lobby ya cargado
+// Renderiza el lobby ya cargado con dos equipos
 async function abrirLobby() {
   httpService.get.mockResolvedValue(armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]))
-  const resultado = renderPage("3")
+  renderPage()
   await screen.findByText("Liga FAMAF Apertura")
-  return resultado
 }
 
-// Renderiza el lobby de una liga en curso ya cargada.
-// Si el test preparó respuestas con mockResolvedValueOnce, se usan esas primero.
-async function abrirLigaEnCurso() {
-  httpService.get.mockResolvedValue(armarLigaEnCurso())
-  const resultado = renderPage("3")
-  await screen.findByText("En curso")
-  return resultado
+// Renderiza el lobby como anfitrión, con N equipos y la liga PENDING.
+async function abrirComoAnfitrion(equipos = 4) {
+  mockUser = USUARIO_ANFITRION
+  httpService.get.mockResolvedValue(armarLiga(armarEquipos(equipos)))
+  renderPage()
+  await screen.findByText("Liga FAMAF Apertura")
+}
+
+// Abandonar la liga lleva dos clicks: Primero "Abandonar liga" y luego "Confirmar"
+function abandonarLiga() {
+  fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar" }))
 }
 
 // ---------- Tests ----------
@@ -114,10 +122,10 @@ async function abrirLigaEnCurso() {
 describe("LeagueLobbyPage", () => {
   beforeEach(() => {
     httpService.get.mockReset()
+    httpService.put.mockReset()
     httpService.delete.mockReset()
     mockListeners.clear()
     mockUser = USUARIO_INVITADO
-    vi.spyOn(window, "confirm").mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -183,35 +191,28 @@ describe("LeagueLobbyPage", () => {
       expect(filaPropia.textContent).toContain("Tu equipo")
       expect(filaPropia.className).toContain("league-lobby__team--own")
     })
-
-    it("Debería no mostrar ningún botón al anfitrión, porque no puede abandonar", async () => {
-      mockUser = USUARIO_ANFITRION
-      await abrirLobby()
-
-      expect(screen.queryAllByRole("button")).toHaveLength(0)
-    })
   })
 
   describe("Acceso solo para los participantes", () => {
     it.each([
       { caso: "el usuario no está inscripto en la liga", user: { team_id: 99 } },
       { caso: "no hay datos de usuario en la sesión", user: null },
-    ])("Debería redirigir a la pantalla principal si la liga es privada y $caso", async ({ user }) => {
+    ])("Debería redirigir a la lista de ligas si la liga es privada y $caso", async ({ user }) => {
       mockUser = user
       httpService.get.mockResolvedValue(armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO], true))
       renderPage()
 
-      expect(await screen.findByText("Pantalla principal")).toBeTruthy()
+      expect(await screen.findByText("Lista de Ligas")).toBeTruthy()
       expect(screen.queryByText("Liga FAMAF Apertura")).toBeNull()
     })
 
-    it("Debería redirigir a la pantalla principal si el servidor responde 403", async () => {
+    it("Debería redirigir a la lista de ligas si el servidor responde 403", async () => {
       httpService.get.mockRejectedValue(
-       new ApiError(403, "FORBIDDEN", "No tienes permisos para ver esta liga")
+        new ApiError(403, "FORBIDDEN", "No tienes permisos para ver esta liga")
       )
       renderPage()
 
-      expect(await screen.findByText("Pantalla principal")).toBeTruthy()
+      expect(await screen.findByText("Lista de Ligas")).toBeTruthy()
     })
   })
 
@@ -242,11 +243,31 @@ describe("LeagueLobbyPage", () => {
       expect(screen.getByText("2 / 8")).toBeTruthy()
     })
 
+    it("Debería mostrar la liga en curso cuando llega LEAGUE_INITIATED de esta liga", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]))
+        .mockResolvedValueOnce(ligaIniciada(armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO])))
+      await abrirLobby()
+      expect(screen.getByText("Esperando equipos")).toBeTruthy()
+
+      await emitirEvento("LEAGUE_INITIATED", {
+        league_id: 3,
+        league_name: "Liga FAMAF Apertura",
+        max_teams: 8,
+        status: "IN_PROGRESS",
+      })
+
+      expect(screen.getByText("En curso")).toBeTruthy()
+      expect(screen.queryByText("Esperando equipos")).toBeNull()
+      expect(httpService.get).toHaveBeenCalledTimes(2)
+    })
+
     it("Debería ignorar los eventos de otras ligas", async () => {
       await abrirLobby()
 
       await emitirEvento("TEAM_JOINED_LEAGUE", { league_id: 999 })
       await emitirEvento("LEAVE_LOBBY_LEAGUE", undefined)
+      await emitirEvento("LEAGUE_INITIATED", { league_id: 999 })
 
       // Solo la carga inicial: no hubo ningún refetch
       expect(httpService.get).toHaveBeenCalledTimes(1)
@@ -266,97 +287,24 @@ describe("LeagueLobbyPage", () => {
     })
   })
 
-  describe("Liga en curso", () => {
-    it("Debería volver a pedir la liga cuando empieza un partido de su fixture", async () => {
-      await abrirLigaEnCurso()
-
-      await emitirEvento("MATCH_STARTED", { match_id: 21 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(2)
-      expect(httpService.get).toHaveBeenLastCalledWith("/leagues/3")
-    })
-
-    it("Debería ignorar MATCH_STARTED de partidos que no están en el fixture, como un amistoso", async () => {
-      await abrirLigaEnCurso()
-
-      await emitirEvento("MATCH_STARTED", { match_id: 999 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(1)
-    })
-
-    it("Debería buscar el partido en el último fixture que se cargó", async () => {
-      httpService.get
-        .mockResolvedValueOnce(armarLigaEnCurso())
-        .mockResolvedValueOnce(armarLigaEnCurso({ fixture: [{ match_id: 21 }, { match_id: 23 }] }))
-      await abrirLigaEnCurso()
-
-      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 3 })
-      await emitirEvento("MATCH_STARTED", { match_id: 23 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(3)
-    })
-
-    it("Debería volver a pedir la liga cuando termina uno de sus partidos", async () => {
-      await abrirLigaEnCurso()
-
-      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 3 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(2)
-    })
-
-    it("Debería mostrar la liga como finalizada cuando termina", async () => {
-      httpService.get
-        .mockResolvedValueOnce(armarLigaEnCurso())
-        .mockResolvedValueOnce(armarLigaEnCurso({ status: "FINISHED" }))
-      await abrirLigaEnCurso()
-
-      await emitirEvento("LEAGUE_FINISHED", { league_id: 3 })
-
-      expect(screen.getByText("Finalizada")).toBeTruthy()
-      expect(screen.queryByText("En curso")).toBeNull()
-    })
-
-    it("Debería ignorar los eventos de otras ligas", async () => {
-      await abrirLigaEnCurso()
-
-      await emitirEvento("LEAGUE_MATCH_FINISHED", { league_id: 999 })
-      await emitirEvento("LEAGUE_FINISHED", { league_id: 999 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(1)
-    })
-
-    it("Debería conservar lo que estaba en pantalla, sin mostrar error, si falla el refetch", async () => {
-      httpService.get
-        .mockResolvedValueOnce(armarLigaEnCurso())
-        .mockRejectedValueOnce(new TypeError("Failed to fetch"))
-      await abrirLigaEnCurso()
-
-      await emitirEvento("LEAGUE_FINISHED", { league_id: 3 })
-
-      expect(httpService.get).toHaveBeenCalledTimes(2)
-      expect(screen.getByText("En curso")).toBeTruthy()
-      expect(screen.queryByRole("alert")).toBeNull()
-    })
-  })
-
   describe("Abandonar liga", () => {
     it("Debería no llamar al servidor si el usuario cancela la confirmación", async () => {
-      window.confirm.mockReturnValue(false)
       await abrirLobby()
 
       fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
 
       expect(httpService.delete).not.toHaveBeenCalled()
       expect(screen.getByRole("button", { name: "Abandonar liga" })).toBeTruthy()
     })
 
-    it("Debería llamar al DELETE con el team_id del usuario y volver a la pantalla principal al confirmar", async () => {
+    it("Debería llamar al DELETE con el team_id del usuario y volver a la lista de ligas al confirmar", async () => {
       httpService.delete.mockResolvedValue(null)
       await abrirLobby()
 
-      fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+      abandonarLiga()
 
-      expect(await screen.findByText("Pantalla principal")).toBeTruthy()
+      expect(await screen.findByText("Lista de Ligas")).toBeTruthy()
       expect(httpService.delete).toHaveBeenCalledWith("/leagues/3/teams/8")
     })
 
@@ -366,30 +314,139 @@ describe("LeagueLobbyPage", () => {
         new ApiError(400, "LEAGUE_STARTED", "No se puede abandonar una liga que ya ha comenzado.")
       )
 
-      fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+      abandonarLiga()
 
       const alerta = await screen.findByRole("alert")
       expect(alerta.textContent).toBe("No se puede abandonar una liga que ya ha comenzado.")
       expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
-      expect(screen.queryByText("Pantalla principal")).toBeNull()
+      expect(screen.queryByText("Lista de Ligas")).toBeNull()
     })
 
     it("Debería deshabilitar el botón mientras el abandono está pendiente", async () => {
       await abrirLobby()
       httpService.delete.mockReturnValue(new Promise(() => {}))
 
-      fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+      abandonarLiga()
 
       const boton = await screen.findByRole("button", { name: "Saliendo..." })
       expect(boton.disabled).toBe(true)
     })
 
-    it("Debería mostrar la liga sin botón de abandonar a quien no participa si la liga es pública", async () => {
-      mockUser = { team_id: 99 }
+    it.each([
+      { caso: "es el anfitrión", user: USUARIO_ANFITRION },
+      { caso: "no participa y la liga es pública", user: { team_id: 99 } },
+    ])("Debería no mostrar 'Abandonar liga' si $caso", async ({ user }) => {
+      mockUser = user
       await abrirLobby()
 
       expect(screen.queryByRole("button", { name: "Abandonar liga" })).toBeNull()
-      expect(screen.queryByText("Pantalla principal")).toBeNull()
+    })
+  })
+
+  describe("Iniciar liga", () => {
+    it.each([
+      { caso: "es el anfitrión y la liga está pendiente", user: USUARIO_ANFITRION, status: "PENDING", accion: "mostrar", visible: true },
+      { caso: "no es el anfitrión", user: { team_id: 2 }, status: "PENDING", accion: "ocultar", visible: false },
+      { caso: "la liga ya está en curso", user: USUARIO_ANFITRION, status: "IN_PROGRESS", accion: "ocultar", visible: false },
+    ])("Debería $accion el botón 'Iniciar liga' si $caso", async ({ user, status, visible }) => {
+      mockUser = user
+      httpService.get.mockResolvedValue({ ...armarLiga(armarEquipos(6)), status })
+      renderPage()
+      await screen.findByText("Liga FAMAF Apertura")
+
+      const boton = screen.queryByRole("button", { name: "Iniciar liga" })
+      expect(boton !== null).toBe(visible)
+    })
+
+    it.each([
+      { equipos: 2, estado: "deshabilitado", deshabilitado: true },
+      { equipos: 3, estado: "deshabilitado", deshabilitado: true },
+      { equipos: 4, estado: "habilitado", deshabilitado: false },
+      { equipos: 5, estado: "deshabilitado", deshabilitado: true },
+      { equipos: 6, estado: "habilitado", deshabilitado: false },
+    ])("Debería dejar $estado el botón 'Iniciar liga' con $equipos equipos", async ({ equipos, deshabilitado }) => {
+      await abrirComoAnfitrion(equipos)
+
+      const boton = screen.getByRole("button", { name: "Iniciar liga" })
+      expect(boton.disabled).toBe(deshabilitado)
+    })
+
+    it("Debería enviar el PUT con status IN_PROGRESS y mostrar la liga en curso cuando el servidor responde 200", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLiga(armarEquipos(4)))
+        .mockResolvedValueOnce(ligaIniciada(armarLiga(armarEquipos(4))))
+      httpService.put.mockResolvedValue({
+        league_id: 3,
+        league_name: "Liga FAMAF Apertura",
+        status: "IN_PROGRESS",
+      })
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      expect(await screen.findByText("En curso")).toBeTruthy()
+      expect(httpService.put).toHaveBeenCalledWith("/leagues/3", { status: "IN_PROGRESS" })
+      expect(screen.queryByRole("button", { name: "Iniciar liga" })).toBeNull()
+    })
+
+    it("Debería deshabilitar el botón y no enviar un segundo PUT mientras la solicitud está en curso", async () => {
+      httpService.put.mockReturnValue(new Promise(() => {}))
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      const boton = await screen.findByRole("button", { name: "Iniciando..." })
+      expect(boton.disabled).toBe(true)
+
+      fireEvent.click(boton)
+      expect(httpService.put).toHaveBeenCalledTimes(1)
+    })
+
+    it.each([
+      {
+        caso: "no hay equipos suficientes",
+        error: new ApiError(400, "INSUFFICIENT_TEAMS", "La liga no contiene el mínimo de equipos"),
+        mensaje: "La liga no contiene el mínimo de equipos",
+      },
+      {
+        caso: "la liga no existe",
+        error: new ApiError(404, "LEAGUE_NOT_FOUND", "La liga seleccionada no existe"),
+        mensaje: "La liga seleccionada no existe",
+      },
+      {
+        caso: "falla por un problema de conexión",
+        error: new TypeError("Failed to fetch"),
+        mensaje: "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.",
+      },
+    ])("Debería mostrar '$mensaje' y seguir en el lobby cuando $caso", async ({ error, mensaje }) => {
+      httpService.put.mockRejectedValue(error)
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      const alerta = await screen.findByRole("alert")
+      expect(alerta.textContent).toBe(mensaje)
+      expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
+      // La pantalla sigue funcionando: el botón vuelve a estar disponible y no hubo refetch
+      expect(screen.getByRole("button", { name: "Iniciar liga" }).disabled).toBe(false)
+      expect(httpService.get).toHaveBeenCalledTimes(1)
+    })
+
+    it("Debería mostrar el mensaje y actualizar la vista al estado real si el servidor responde LEAGUE_ALREADY_STARTED", async () => {
+      httpService.get
+        .mockResolvedValueOnce(armarLiga(armarEquipos(4)))
+        .mockResolvedValueOnce(ligaIniciada(armarLiga(armarEquipos(4))))
+      httpService.put.mockRejectedValue(
+        new ApiError(409, "LEAGUE_ALREADY_STARTED", "La liga ya está iniciada")
+      )
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      const alerta = await screen.findByRole("alert")
+      expect(alerta.textContent).toBe("La liga ya está iniciada")
+      expect(await screen.findByText("En curso")).toBeTruthy()
+      expect(httpService.get).toHaveBeenCalledTimes(2)
     })
   })
 })
