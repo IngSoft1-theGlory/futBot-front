@@ -85,6 +85,7 @@ function useLeagueLobby(leagueId) {
   useGlobalEvent("TEAM_JOINED_LEAGUE", handleLobbyEvent)
   useGlobalEvent("LEAVE_LOBBY_LEAGUE", handleLobbyEvent)
   useGlobalEvent("LEAGUE_INITIATED", handleLobbyEvent)
+  useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
 
   return { league, status, error, refetchLeague }
 }
@@ -180,6 +181,12 @@ function LeagueLobbyPage() {
         </p>
       </section>
 
+      {startError && (
+        <p className="league-lobby__error" role="alert">
+          {startError}
+        </p>
+      )}
+
       {isWaitingRoom ? (
         <>
           <ul className="league-lobby__teams">
@@ -208,59 +215,28 @@ function LeagueLobbyPage() {
             </p>
           )}
 
-          {isMember && !isHost && (
-            <button
-              type="button"
-              className="league-lobby__leave"
-              onClick={handleLeave}
-              disabled={isLeaving}
+          {canShowStart && (
+            <Button
+              onClick={handleStart}
+              isLoading={isInitiating}
+              disabled={!canStart}
             >
-              {isLeaving ? "Saliendo..." : "Abandonar liga"}
-            </button>
+              {isInitiating ? "Iniciando..." : "Iniciar liga"}
+            </Button>
+          )}
+
+          {isMember && !isHost && (
+            <ConfirmButton
+              label={isLeaving ? "Saliendo..." : "Abandonar liga"}
+              confirmMessage="¿Seguro que querés abandonar la liga?"
+              onConfirm={handleLeave}
+              isLoading={isLeaving}
+              variant="danger"
+            />
           )}
         </>
       ) : (
         <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
-              <span className="league-lobby__team-name">{team.team_name}</span>
-              <span className="league-lobby__badges">
-                {isTeamHost && <span className="league-lobby__badge">Anfitrión</span>}
-                {isOwn && <span className="league-lobby__badge">Tu equipo</span>}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-
-      {leaveError && (
-        <p className="league-lobby__error" role="alert">
-          {leaveError}
-        </p>
-      )}
-
-      {startError && (
-        <p className="league-lobby__error" role="alert">
-          {startError}
-        </p>
-      )}
-
-      {canShowStart && (
-        <Button
-          onClick={handleStart}
-          isLoading={isInitiating}
-          disabled={!canStart}
-        >
-          {isInitiating ? "Iniciando..." : "Iniciar liga"}
-        </Button>
-      )}
-
-      {isMember && !isHost && (
-        <ConfirmButton
-          label={isLeaving ? "Saliendo..." : "Abandonar liga"}
-          confirmMessage="¿Seguro que querés abandonar la liga?"
-          onConfirm={handleLeave}
-          isLoading={isLeaving}
-          variant="danger"
-        />
       )}
     </main>
   )

@@ -99,6 +99,9 @@ function armarLigaEnCurso(cambios = {}) {
     ranking: [armarPosicion(1, EQUIPO_INVITADO, 3), armarPosicion(2, EQUIPO_ANFITRION, 0)],
     fixture: [armarPartido(21), armarPartido(22)],
     ...cambios,
+  }
+}
+
 // La liga ya iniciada
 function ligaIniciada(liga) {
   return { ...liga, status: "IN_PROGRESS" }
@@ -149,6 +152,12 @@ async function abrirComoAnfitrion(equipos = 4) {
   httpService.get.mockResolvedValue(armarLiga(armarEquipos(equipos)))
   renderPage()
   await screen.findByText("Liga FAMAF Apertura")
+}
+
+async function abrirLigaEnCurso() {
+  httpService.get.mockResolvedValue(armarLigaEnCurso())
+  renderPage()
+  await screen.findByText("En curso")
 }
 
 // Abandonar la liga lleva dos clicks: Primero "Abandonar liga" y luego "Confirmar"
