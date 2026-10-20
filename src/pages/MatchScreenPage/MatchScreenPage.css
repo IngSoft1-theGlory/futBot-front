@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 1rem;
   min-height: 100vh;
-  padding: 1rem;
+  padding: 1rem clamp(1rem, 4vw, 3rem);
   color: #e2e8f0;
   background: #0b1020;
 }
@@ -34,11 +34,15 @@
 .match-page__content {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 1rem;
   align-items: flex-start;
 }
 
+/* La cancha entra entera en el alto de la pantalla: su ancho máximo sale del alto
+   disponible (pantalla menos marcador y márgenes) por la proporción del viewBox (113 x 68) */
 .match-page__content > svg {
   flex: 1 1 480px;
   min-width: 0;
+  max-width: calc((100svh - 12rem) * 1.66);
 }
