@@ -60,3 +60,14 @@ export function applyFullState(match, freshState) {
   if (match && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
 }
+
+// Cambia el comportamiento de un jugador (después de que el back confirmó el cambio).
+// El resto del partido queda igual.
+export function applyBehaviorChange(match, playerId, behaviorId) {
+  return {
+    ...match,
+    players: match.players.map((player) =>
+      player.player_id === playerId ? { ...player, behavior_id: behaviorId } : player
+    ),
+  }
+}

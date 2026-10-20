@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
 import { openMatchSocket } from "../services/matchSockets"
-import { applyTick, applyFullState, isMatchOver, MATCH_FINISHED } from "../services/matchState"
+import { applyTick, applyFullState, applyBehaviorChange, isMatchOver, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
 
 // Este hook hace TODO el trabajo "invisible" de la pantalla del partido:
@@ -19,6 +19,7 @@ import { useGlobalEvent } from "./useGlobalEvent"
 //   teams:        { home, away } con { id, name, logo }
 //   reconnecting: true mientras la conexión en vivo está cortada
 //   retry:        función para volver a intentar después de un error de conexión
+//   updatePlayerBehavior: actualiza el comportamiento de un jugador cuando el back confirma el cambio
 
 export function useMatchLive(matchId) {
   const navigate = useNavigate()
@@ -147,5 +148,9 @@ export function useMatchLive(matchId) {
     setAttempt((current) => current + 1)
   }
 
-  return { status, match, teams, reconnecting, retry }
+  function updatePlayerBehavior(playerId, behaviorId) {
+    setMatch((current) => (current ? applyBehaviorChange(current, playerId, behaviorId) : current))
+  }
+
+  return { status, match, teams, reconnecting, retry, updatePlayerBehavior }
 }

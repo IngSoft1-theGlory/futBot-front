@@ -50,3 +50,10 @@ export async function requestMatchWebsocketUrl(matchId) {
   }
   return data.websocket_url
 }
+
+// Cambia el comportamiento de un jugador propio durante el partido
+// (PUT /matches/{matchId}/players/{playerId}/behavior). El motor lo aplica desde el próximo tick.
+// Respuesta: { match_id, player_id, behavior_id }
+export async function changePlayerBehavior(matchId, playerId, behaviorId) {
+  return httpService.put(`/matches/${matchId}/players/${playerId}/behavior`, { behavior_id: behaviorId })
+}
