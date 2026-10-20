@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link, Navigate } from "react-router-dom"
 import { httpService, ApiError } from "../../services/createhttpService"
 import { useSession } from "../../hooks/useSession"
 import { useGlobalEvent } from "../../hooks/useGlobalEvent"
-import { useLeagueInProgressEvents } from "../../hooks/useLeagueInProgressEvents"
+import ConfirmButton from "../../components/ConfirmButton/ConfirmButton"
+import Button from "../../components/Button/Button"
 import "./LeagueLobbyPage.css"
 
 const NETWORK_ERROR_MESSAGE =
@@ -65,7 +66,7 @@ function useLeagueLobby(leagueId) {
   }, [leagueId])
 
   function refetchLeague() {
-    httpService
+    return httpService
       .get(`/leagues/${leagueId}`)
       .then((data) => setLeague(data))
       .catch(() => {
@@ -81,34 +82,51 @@ function useLeagueLobby(leagueId) {
   }
   useGlobalEvent("TEAM_JOINED_LEAGUE", handleLobbyEvent)
   useGlobalEvent("LEAVE_LOBBY_LEAGUE", handleLobbyEvent)
+  useGlobalEvent("LEAGUE_INITIATED", handleLobbyEvent)
 
-  // Eventos de la liga en curso: partidos que empiezan o terminan y fin de la liga
-  useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
-
-  return { league, status, error }
+  return { league, status, error, refetchLeague }
 }
 
 function LeagueLobbyPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
   const { user } = useSession()
-  const { league, status, error } = useLeagueLobby(leagueId)
+  const { league, status, error, refetchLeague } = useLeagueLobby(leagueId)
 
   const [isLeaving, setIsLeaving] = useState(false)
   const [leaveError, setLeaveError] = useState(null)
+  const [startError, setStartError] = useState(null)
+  const [isInitiating, setIsInitiating] = useState(false)
 
   async function handleLeave() {
-    if (!window.confirm("¿Seguro que querés abandonar la liga?")) return
-
     setIsLeaving(true)
     setLeaveError(null)
 
     try {
       await httpService.delete(`/leagues/${leagueId}/teams/${user.team_id}`)
-      navigate("/", { replace: true })
+      navigate("/leagues", { replace: true })
     } catch (err) {
       setLeaveError(getErrorsMessages(err))
       setIsLeaving(false)
+    }
+  }
+
+  async function handleStart() {
+    setIsInitiating(true)
+    setStartError(null)
+
+    try {
+      await httpService.put(`/leagues/${leagueId}`, {
+        status: "IN_PROGRESS"
+      })
+      await refetchLeague()
+    } catch (err) {
+      setStartError(getErrorsMessages(err))
+      if (err instanceof ApiError && err.error === "LEAGUE_ALREADY_STARTED") {
+        await refetchLeague()
+      }
+    } finally {
+      setIsInitiating(false)
     }
   }
 
@@ -120,7 +138,7 @@ function LeagueLobbyPage() {
     )
   }
   // El usuario no puede ver esta liga
-  if (status === "forbidden") return <Navigate to="/" replace />
+  if (status === "forbidden") return <Navigate to="/leagues" replace />
 
   if (status === "error") {
     return (
@@ -133,8 +151,10 @@ function LeagueLobbyPage() {
 
   const isHost = league.host_team_id === user?.team_id
   const isMember = league.teams.some((team) => team.team_id === user?.team_id)
+  const canShowStart = isHost && league.status === "PENDING"
+  const canStart = league.current_teams_count >= 4 && league.current_teams_count % 2 === 0
 
-  if (!isMember && league.is_private) return <Navigate to="/" replace />
+  if (!isMember && league.is_private) return <Navigate to="/leagues" replace />
 
   return (
     <main className="league-lobby">
@@ -181,15 +201,30 @@ function LeagueLobbyPage() {
         </p>
       )}
 
-      {isMember && !isHost && (
-        <button
-          type="button"
-          className="league-lobby__leave"
-          onClick={handleLeave}
-          disabled={isLeaving}
+      {startError && (
+        <p className="league-lobby__error" role="alert">
+          {startError}
+        </p>
+      )}
+
+      {canShowStart && (
+        <Button
+          onClick={handleStart}
+          isLoading={isInitiating}
+          disabled={!canStart}
         >
-          {isLeaving ? "Saliendo..." : "Abandonar liga"}
-        </button>
+          {isInitiating ? "Iniciando..." : "Iniciar liga"}
+        </Button>
+      )}
+
+      {isMember && !isHost && (
+        <ConfirmButton
+          label={isLeaving ? "Saliendo..." : "Abandonar liga"}
+          confirmMessage="¿Seguro que querés abandonar la liga?"
+          onConfirm={handleLeave}
+          isLoading={isLeaving}
+          variant="danger"
+        />
       )}
     </main>
   )
