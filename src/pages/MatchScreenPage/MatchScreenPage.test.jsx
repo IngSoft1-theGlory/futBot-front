@@ -14,6 +14,8 @@ const { mockMatchHeader, mockMatchField } = vi.hoisted(() => ({
 
 vi.mock("../../hooks/useMatchLive", () => ({ useMatchLive: vi.fn() }))
 
+vi.mock("../../hooks/useSession", () => ({ useSession: () => ({ user: { team_id: 1 } }) }))
+
 vi.mock("../../components/MatchHeader/MatchHeader", () => ({
   default: (props) => {
     mockMatchHeader(props)
@@ -42,9 +44,10 @@ vi.mock("../../components/MatchField/MatchField", () => ({
 }))
 
 vi.mock("../../components/PlayerPanel/PlayerPanel", () => ({
-  default: ({ player, onClose }) => (
+  default: ({ player, onClose, canChangeBehavior }) => (
     <aside data-testid="player-panel">
       <p>{`Panel de ${player.name}`}</p>
+      {canChangeBehavior && <p>Puede cambiar el comportamiento</p>}
       <p data-testid="panel-x">{player.position.x}</p>
       <button onClick={onClose}>Cerrar panel</button>
     </aside>
@@ -158,6 +161,16 @@ describe("MatchScreenPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }))
       expect(screen.queryByTestId("player-panel")).toBeNull()
       expect(ultimasProps(mockMatchField).selectedPlayerId).toBeNull()
+    })
+
+    it("Debería permitir cambiar el comportamiento solo de los jugadores del propio equipo", () => {
+      render(pagina())
+
+      elegirJugador("Messi")
+      expect(screen.getByText("Puede cambiar el comportamiento")).toBeTruthy()
+
+      elegirJugador("Ronaldo")
+      expect(screen.queryByText("Puede cambiar el comportamiento")).toBeNull()
     })
   })
 
