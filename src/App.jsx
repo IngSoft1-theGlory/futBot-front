@@ -19,6 +19,7 @@ import VerifyLeaguePasswordPage from "./pages/VerifyLeaguePasswordPage/VerifyLea
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
 import MatchResultPage from "./pages/MatchResultPage/MatchResultPage"
 import BehaviorListPage from "./pages/BehaviorListPage/BehaviorListPage"
+import RankingPage from "./pages/RankingPage/RankingPage"
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/leagues/:leagueId/lineup" element={<LeagueLineupPage />} />
         <Route path="/leagues/new" element={<CreateLeaguePage />} />
         <Route path="/behaviors" element={<BehaviorListPage />}  />
+        <Route path="/ranking" element={<RankingPage />} />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}
