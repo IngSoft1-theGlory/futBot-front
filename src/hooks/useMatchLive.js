@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
 import { openMatchSocket } from "../services/matchSockets"
-import { applyTick, applyFullState, applyBehaviorChange, isMatchOver, startPause, finishPause, countDownPause, MATCH_FINISHED } from "../services/matchState"
+import { applyTick, applyFullState, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, isMatchOver, startPause, finishPause, countDownPause, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
 
 const ONE_SECOND_MS = 1000
@@ -13,8 +13,9 @@ const ONE_SECOND_MS = 1000
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
 //   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva
 //   4. si la conexión se corta, avisa y al volver pide el estado de nuevo
-//   5. cuando el partido termina, navega al resultado
-//   6. al salir de la pantalla, cierra la conexión
+//   5. cuando entra un jugador nuevo a la cancha (sustitución), pide sus datos a /state
+//   6. cuando el partido termina, navega al resultado
+//   7. al salir de la pantalla, cierra la conexión
 //
 // Devuelve lo que la pantalla necesita para dibujarse:
 //   status:       "loading" | "ready" | "connection-error" | "not-participant" | "not-found"
@@ -23,6 +24,7 @@ const ONE_SECOND_MS = 1000
 //   reconnecting: true mientras la conexión en vivo está cortada
 //   retry:        función para volver a intentar después de un error de conexión
 //   updatePlayerBehavior: actualiza el comportamiento de un jugador cuando el back confirma el cambio
+//   substitutePlayer:     aplica en la cancha una sustitución cuando el back la confirma
 
 export function useMatchLive(matchId) {
   const navigate = useNavigate()
@@ -58,6 +60,27 @@ export function useMatchLive(matchId) {
 
     return () => clearInterval(countdownTimer)
   }, [isPaused])
+
+  // Jugadores nuevos en cancha (entraron por una sustitución): el tick solo trae su
+  // posición, así que se piden sus datos (nombre, número, atributos) a /state.
+  // Se vuelve a pedir solo si cambia la lista de jugadores sin datos.
+  const missingDetailsKey = playersMissingDetails(match).join(",")
+  useEffect(() => {
+    if (!missingDetailsKey) return
+    let isActive = true
+
+    fetchMatchState(matchId)
+      .then((freshState) => {
+        if (isActive) setMatch((current) => applyPlayerDetails(current, freshState.players))
+      })
+      .catch(() => {
+        // Si falla, el jugador se sigue dibujando en su posición, solo que sin número
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [matchId, missingDetailsKey])
 
   // Efecto principal: se ejecuta al entrar a la pantalla (y al reintentar)
   useEffect(() => {
@@ -173,5 +196,9 @@ export function useMatchLive(matchId) {
     setMatch((current) => (current ? applyBehaviorChange(current, playerId, behaviorId) : current))
   }
 
-  return { status, match, teams, reconnecting, retry, updatePlayerBehavior }
+  function substitutePlayer(playerOutId, playerInId) {
+    setMatch((current) => (current ? applySubstitution(current, playerOutId, playerInId) : current))
+  }
+
+  return { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer }
 }
