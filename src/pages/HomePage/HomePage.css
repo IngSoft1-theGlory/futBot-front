@@ -49,6 +49,22 @@
   white-space: nowrap;
 }
 
+.home-topbar__profile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.home-topbar__profile:hover,
+.home-topbar__profile:focus-visible {
+  background: rgba(99, 102, 241, 0.18);
+}
+
 .home-topbar__avatar {
   flex-shrink: 0;
   width: 36px;

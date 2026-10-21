@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import ActionCard from "../../components/ActionCard/ActionCard"
 import { useSession } from "../../hooks/useSession"
@@ -61,10 +61,13 @@ function HomePage() {
         <span className="home-topbar__brand">FutBot</span>
 
         <div className="home-topbar__user">
-          <span className="home-topbar__avatar" aria-hidden="true">
-            {(user?.username ?? "?").charAt(0).toUpperCase()}
-          </span>
-          <span className="home-topbar__username">{user?.username ?? "Jugador"}</span>
+          {/* el avatar y el nombre llevan al perfil del usuario */}
+          <Link to="/profile" className="home-topbar__profile" title="Ver mi perfil">
+            <span className="home-topbar__avatar" aria-hidden="true">
+              {(user?.username ?? "?").charAt(0).toUpperCase()}
+            </span>
+            <span className="home-topbar__username">{user?.username ?? "Jugador"}</span>
+          </Link>
           <Button variant="danger" onClick={handleLogout} isLoading={isLoggingOut}>
             Cerrar sesión
           </Button>
