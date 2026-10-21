@@ -3,19 +3,22 @@ import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
 import { openMatchSocket } from "../services/matchSockets"
-import { applyTick, applyFullState, applyBehaviorChange, isMatchOver, MATCH_FINISHED } from "../services/matchState"
+import { applyTick, applyFullState, applyBehaviorChange, isMatchOver, startPause, finishPause, countDownPause, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
+
+const ONE_SECOND_MS = 1000
 
 // Este hook hace TODO el trabajo "invisible" de la pantalla del partido:
 //   1. carga el estado inicial (partido + equipos) en paralelo
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
-//   3. si la conexión se corta, avisa y al volver pide el estado de nuevo
-//   4. cuando el partido termina, navega al resultado
-//   5. al salir de la pantalla, cierra la conexión
+//   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva
+//   4. si la conexión se corta, avisa y al volver pide el estado de nuevo
+//   5. cuando el partido termina, navega al resultado
+//   6. al salir de la pantalla, cierra la conexión
 //
 // Devuelve lo que la pantalla necesita para dibujarse:
 //   status:       "loading" | "ready" | "connection-error" | "not-participant" | "not-found"
-//   match:        estado del partido { currentTick, totalTicks, score, ball, players }
+//   match:        estado del partido { currentTick, totalTicks, score, ball, players, pause } NOTA = pause es null si no hay pausa, o { type, remainingSeconds } si la hay
 //   teams:        { home, away } con { id, name, logo }
 //   reconnecting: true mientras la conexión en vivo está cortada
 //   retry:        función para volver a intentar después de un error de conexión
@@ -43,6 +46,18 @@ export function useMatchLive(matchId) {
   useEffect(() => {
     if (isOver) navigate(resultPath, { replace: true })
   }, [isOver, resultPath])
+
+  // cuenta regresiva de la pausa, osea mientras hay pausa, resta un segundo cada segundo , cuando la pausa termina (o se sale de la pantalla), el contador se detiene
+  const isPaused = Boolean(match?.pause)
+  useEffect(() => {
+    if (!isPaused) return
+
+    const countdownTimer = setInterval(() => {
+      setMatch((current) => countDownPause(current))
+    }, ONE_SECOND_MS)
+
+    return () => clearInterval(countdownTimer)
+  }, [isPaused])
 
   // Efecto principal: se ejecuta al entrar a la pantalla (y al reintentar)
   useEffect(() => {
@@ -118,6 +133,12 @@ export function useMatchLive(matchId) {
       connection = openMatchSocket(matchId, {
         onTick: (tick) => {
           if (isActive) setMatch((current) => applyTick(current, tick))
+        },
+        onPauseStarted: (message) => {
+          if (isActive) setMatch((current) => startPause(current, message))
+        },
+        onPauseFinished: () => {
+          if (isActive) setMatch((current) => finishPause(current))
         },
         onConnected: (isReconnection) => {
           if (!isActive) return

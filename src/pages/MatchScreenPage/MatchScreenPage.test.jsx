@@ -261,4 +261,26 @@ describe("MatchScreenPage", () => {
       expect(screen.queryByTestId("player-panel")).toBeNull()
     })
   })
+
+  describe("Pausas", () => {
+    it("Debería mostrar el tipo de pausa y los segundos restantes, sin dejar de mostrar el marcador ni la cancha", () => {
+      mockHook({ match: { ...MATCH, pause: { type: "HT", remainingSeconds: 25 } } })
+      render(pagina())
+
+      expect(screen.getByText("Pausa: HT · Quedan 25 s")).toBeTruthy()
+      expect(ultimasProps(mockMatchHeader).score).toEqual(MATCH.score)
+      expect(screen.getByTestId("match-field")).toBeTruthy()
+    })
+
+    it("Debería actualizar la cuenta regresiva y sacar el aviso cuando termina la pausa", () => {
+      mockHook({ match: { ...MATCH, pause: { type: "HT", remainingSeconds: 25 } } })
+      const resultado = render(pagina())
+
+      actualizarHook(resultado, { match: { ...MATCH, pause: { type: "HT", remainingSeconds: 24 } } })
+      expect(screen.getByText("Pausa: HT · Quedan 24 s")).toBeTruthy()
+
+      actualizarHook(resultado, { match: { ...MATCH, pause: null } })
+      expect(screen.queryByText(/Pausa/)).toBeNull()
+    })
+  })
 })

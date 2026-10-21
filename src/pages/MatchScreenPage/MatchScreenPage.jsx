@@ -79,6 +79,14 @@ function MatchPage() {
         </p>
       )}
 
+      {/* Aviso de pausa: qué tipo de pausa es y cuántos segundos faltan para que termine.
+          Mientras dura, el marcador, el reloj y la cancha quedan congelados (ver useMatchLive) */}
+      {match.pause && (
+        <p className="match-page__pause">
+          Pausa: {match.pause.type} · Quedan {match.pause.remainingSeconds} s
+        </p>
+      )}
+
       <MatchHeader
         homeTeam={teams.home}
         awayTeam={teams.away}

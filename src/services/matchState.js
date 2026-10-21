@@ -24,6 +24,9 @@ export function applyTick(match, tick) {
   // Un mensaje sin tick no sirve: se deja todo como estaba
   if (!tick || !Number.isFinite(tick.current_tick)) return match
 
+  // Durante una pausa el partido está congelado: marcador, reloj y cancha no cambian
+  if (match.pause) return match
+
   // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo
   if (tick.current_tick < match.currentTick) return match
 
@@ -56,6 +59,8 @@ export function applyTick(match, tick) {
 
 // Combina el estado actual con el que devuelve GET /state (se usa al reconectar).
 // Solo lo acepta si es igual o más nuevo que el que ya tenemos.
+// Tambien reemplaza la pausa: si mientras estuvimos desconectados la pausa terminó,
+// /state trae pause: null y la pantalla deja de mostrarla
 export function applyFullState(match, freshState) {
   if (match && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
@@ -69,5 +74,35 @@ export function applyBehaviorChange(match, playerId, behaviorId) {
     players: match.players.map((player) =>
       player.player_id === playerId ? { ...player, behavior_id: behaviorId } : player
     ),
+  }
+}
+
+// ---------- Pausas ----------
+// Mientras hay una pausa, match.pause es { type, remainingSeconds }.
+// Cuando no hay pausa, match.pause es null.
+
+// Empieza una pausa (evento PAUSE_STARTED).
+// Al principio faltan todos los segundos de la pausa: duration_seconds.
+export function startPause(match, message) {
+  return {
+    ...match,
+    pause: { type: message.type, remainingSeconds: message.duration_seconds },
+  }
+}
+
+// Termina la pausa (evento PAUSE_FINISHED): el partido vuelve a "sin pausa".
+export function finishPause(match) {
+  return { ...match, pause: null }
+}
+
+// Descuenta un segundo de la pausa (se llama una vez por segundo mientras dura).
+// Nunca baja de 0: si llega a 0 antes que PAUSE_FINISHED, se queda en 0 esperando
+// ese aviso, porque es el backend el que decide cuándo termina la pausa.
+export function countDownPause(match) {
+  if (!match?.pause || match.pause.remainingSeconds <= 0) return match
+
+  return {
+    ...match,
+    pause: { ...match.pause, remainingSeconds: match.pause.remainingSeconds - 1 },
   }
 }

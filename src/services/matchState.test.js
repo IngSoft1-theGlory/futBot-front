@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { applyTick, applyFullState, isMatchOver, applyBehaviorChange } from "./matchState"
+import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, startPause, finishPause, countDownPause } from "./matchState"
 
 const baseMatch = {
   currentTick: 10,
@@ -63,6 +63,18 @@ describe("applyTick", () => {
     expect(baseMatch.currentTick).toBe(10)
     expect(baseMatch.score).toEqual({ home: 0, away: 0 })
   })
+
+  it("ignora los ticks mientras el partido está en pausa (marcador, reloj y cancha congelados)", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+    const tick = {
+      current_tick: 11,
+      score: { home: 1, away: 0 },
+      ball: { x: 60, y: 31 },
+      players: [{ player_id: 1, position: { x: 12, y: 11 }, current_action: "RUN" }],
+    }
+
+    expect(applyTick(pausedMatch, tick)).toBe(pausedMatch)
+  })
 })
 
 describe("applyFullState", () => {
@@ -76,6 +88,42 @@ describe("applyFullState", () => {
     const old = { ...baseMatch, currentTick: 3 }
 
     expect(applyFullState(baseMatch, old)).toBe(baseMatch)
+  })
+
+  it("quita la pausa si el estado nuevo dice que ya no hay pausa (por ejemplo, al reconectar)", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+
+    expect(applyFullState(pausedMatch, { ...baseMatch, pause: null }).pause).toBeNull()
+  })
+})
+
+describe("pausas", () => {
+  it("startPause guarda el tipo y arranca la cuenta desde duration_seconds", () => {
+    const result = startPause(baseMatch, { type: "HT", duration_seconds: 30, current_tick: 10 })
+
+    expect(result.pause).toEqual({ type: "HT", remainingSeconds: 30 })
+    expect(result.score).toBe(baseMatch.score) // lo demás no cambia
+    expect(baseMatch.pause).toBeUndefined() // no modifica el original
+  })
+
+  it("finishPause vuelve a 'sin pausa'", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 5 } }
+
+    expect(finishPause(pausedMatch).pause).toBeNull()
+  })
+
+  it("countDownPause descuenta un segundo", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+
+    expect(countDownPause(pausedMatch).pause).toEqual({ type: "HT", remainingSeconds: 29 })
+  })
+
+  it("countDownPause no baja de 0 y no hace nada si no hay pausa", () => {
+    const pauseAtZero = { ...baseMatch, pause: { type: "HT", remainingSeconds: 0 } }
+    const notPaused = { ...baseMatch, pause: null }
+
+    expect(countDownPause(pauseAtZero)).toBe(pauseAtZero)
+    expect(countDownPause(notPaused)).toBe(notPaused)
   })
 })
 
