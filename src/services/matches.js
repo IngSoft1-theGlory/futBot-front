@@ -7,9 +7,10 @@ import { httpService } from "./createhttpService"
 // Se usa al entrar a la pantalla y cada vez que la conexión en vivo se recupera.
 //
 // Forma esperada de la respuesta:
-//   { current_tick, total_ticks, score: { home, away }, ball: { x, y },
+//   { current_tick, total_ticks, phase, score: { home, away }, ball: { x, y },
 //     players: [{ player_id, team_id, name, number, attributes, behavior_id,
-//                 position: { x, y }, current_action }] }
+//                 position: { x, y }, current_action }],
+//     pause: { type, remaining_seconds } }   <- cuando phase es "PAUSED"
 export async function fetchMatchState(matchId) {
   const data = await httpService.get(`/matches/${matchId}/state`)
 
@@ -19,7 +20,14 @@ export async function fetchMatchState(matchId) {
     score: data.score,
     ball: data.ball ?? null,
     players: data.players ?? [],
+    pause: toPause(data),
   }
+}
+
+// Convierte la pausa que informa /state a { type, remainingSeconds }, si el partido NO esta en pausa devuelve null, así /state no activa ninguna pausa
+function toPause(data) {
+  if (data.phase !== "PAUSED" || !data.pause) return null
+  return { type: data.pause.type, remainingSeconds: data.pause.remaining_seconds }
 }
 
 // Pide los datos de los equipos (GET /friendly/{matchId}): nombre, logo y cuál es el local.

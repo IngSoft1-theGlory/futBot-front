@@ -26,13 +26,15 @@ function isFinalError(error) {
 /*
  callbacks:
    onTick(mensaje)       llegó un TICK_UPDATE
+   onPauseStarted(mensaje)  llegó un PAUSE_STARTED (empezó una pausa)
+   onPauseFinished(mensaje) llegó un PAUSE_FINISHED (terminó la pausa)
    onConnected(esReconexion) la conexión quedó abierta (true si antes ya se había cortado)
    onDisconnected()      se cortó una conexión que ya había funcionado (se va a reintentar)
    onFirstConnectionFailed() falló el PRIMER intento: no se reintenta, la pantalla ofrece un botón
    onRejected(error)     el backend rechazó el pedido con un error definitivo (400/403/404)
 */
 export function openMatchSocket(matchId, callbacks) {
-  const { onTick, onConnected, onDisconnected, onFirstConnectionFailed, onRejected } = callbacks
+  const { onTick, onPauseStarted, onPauseFinished, onConnected, onDisconnected, onFirstConnectionFailed, onRejected,} = callbacks
 
   let isClosed = false // true cuando la pantalla pidió cerrar (o ya no hay que reintentar)
   let socket = null
@@ -116,9 +118,13 @@ export function openMatchSocket(matchId, callbacks) {
         return // mensaje que no es JSON: se ignora
       }
 
-      // El motor manda los datos del tick junto al nombre del evento:
+      // El motor manda los datos junto al nombre del evento:
       // { "event": "TICK_UPDATE", "current_tick": 10, ... }
+      // { "event": "PAUSE_STARTED", "type": "...", "duration_seconds": 30, "current_tick": 600 }
+      // { "event": "PAUSE_FINISHED", "type": "..." }
       if (message?.event === "TICK_UPDATE") onTick(message)
+      else if (message?.event === "PAUSE_STARTED") onPauseStarted(message)
+      else if (message?.event === "PAUSE_FINISHED") onPauseFinished(message)
     }
 
     // El navegador siempre llama a onclose (también después de un error),
