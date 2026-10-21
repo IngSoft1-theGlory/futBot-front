@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { httpService } from "../../services/createhttpService"
+import BehaviorSelector from "../BehaviorSelector/BehaviorSelector"
 import "./PlayerPanel.css"
 
 const ATTRIBUTES = [
@@ -10,7 +11,7 @@ const ATTRIBUTES = [
   { key: "strength", label: "Fuerza" },
 ]
 
-function PlayerPanel({ player, onClose }) {
+function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, onBehaviorChanged }) {
   const [behavior, setBehavior] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -80,6 +81,16 @@ function PlayerPanel({ player, onClose }) {
       <section className="player-panel__behavior">
         <h3 className="player-panel__section-title">Comportamiento</h3>
         {renderBehavior()}
+        {/* Solo para jugadores propios. El key reinicia el selector al elegir otro jugador */}
+        {canChangeBehavior && (
+          <BehaviorSelector
+            key={player.player_id}
+            matchId={matchId}
+            playerId={player.player_id}
+            currentBehaviorId={player.behavior_id}
+            onChanged={onBehaviorChanged}
+          />
+        )}
       </section>
     </aside>
   )

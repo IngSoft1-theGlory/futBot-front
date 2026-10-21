@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { applyTick, applyFullState, isMatchOver, startPause, finishPause, countDownPause } from "./matchState"
+import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, startPause, finishPause, countDownPause } from "./matchState"
 
 const baseMatch = {
   currentTick: 10,
@@ -134,5 +134,18 @@ describe("isMatchOver", () => {
 
   it("es false mientras falten ticks", () => {
     expect(isMatchOver({ currentTick: 599, totalTicks: 600 })).toBe(false)
+  })
+})
+
+describe("applyBehaviorChange", () => {
+  it("Debería cambiar solo el comportamiento del jugador indicado", () => {
+    const result = applyBehaviorChange({ ...baseMatch, players: [
+      { ...baseMatch.players[0], behavior_id: 3 },
+      baseMatch.players[1],
+    ] }, 1, 8)
+
+    expect(result.players[0].behavior_id).toBe(8)
+    expect(result.players[0].position).toEqual({ x: 10, y: 10 })
+    expect(result.players[1]).toBe(baseMatch.players[1])
   })
 })

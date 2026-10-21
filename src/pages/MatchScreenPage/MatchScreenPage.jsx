@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useMatchLive } from "../../hooks/useMatchLive"
+import { useSession } from "../../hooks/useSession"
 import MatchHeader from "../../components/MatchHeader/MatchHeader"
 import Pitch from "../../components/Pitch/Pitch"
 import MatchField from "../../components/MatchField/MatchField"
@@ -17,7 +18,8 @@ const CONNECTION_ERROR_MESSAGE = "Error al no poder iniciar el partido por falla
 // Lo único que maneja acá es qué jugador está seleccionado.
 function MatchPage() {
   const { matchId } = useParams()
-  const { status, match, teams, reconnecting, retry } = useMatchLive(matchId)
+  const { status, match, teams, reconnecting, retry, updatePlayerBehavior } = useMatchLive(matchId)
+  const { user } = useSession()
 
   // Guardamos solo el ID del jugador seleccionado (no el jugador entero),
   // así el panel siempre muestra los datos más recientes.
@@ -106,7 +108,13 @@ function MatchPage() {
 
         {/* El panel solo aparece cuando hay un jugador seleccionado */}
         {selectedPlayer && (
-          <PlayerPanel player={selectedPlayer} onClose={() => setSelectedPlayerId(null)} />
+          <PlayerPanel
+            player={selectedPlayer}
+            onClose={() => setSelectedPlayerId(null)}
+            matchId={Number(matchId)}
+            canChangeBehavior={selectedPlayer.team_id === user?.team_id}
+            onBehaviorChanged={(behaviorId) => updatePlayerBehavior(selectedPlayer.player_id, behaviorId)}
+          />
         )}
       </div>
     </main>
