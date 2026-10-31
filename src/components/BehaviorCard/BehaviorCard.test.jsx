@@ -24,13 +24,22 @@ describe("BehaviorCard", () => {
   })
 
   describe("Render", () => {
-    it("Debería mostrar nombre y descripción (completa en el title), sin mostrar el código", () => {
+    it("Debería mostrar nombre y descripción, sin mostrar el código", () => {
       render(<BehaviorCard behavior={mockBehavior} onSelect={mockOnSelect} />)
 
       expect(screen.getByText("Atacar arco")).toBeInTheDocument()
       expect(screen.getByText(mockBehavior.description)).toBeInTheDocument()
       expect(screen.getByTitle(mockBehavior.description)).toBeInTheDocument()
       expect(screen.queryByText(/def on_tick/)).not.toBeInTheDocument()
+    })
+
+    it("Debería mostrar la etiqueta 'Por default' solo en los comportamientos por default", () => {
+      const { rerender } = render(<BehaviorCard behavior={mockBehavior} onSelect={mockOnSelect} />)
+      expect(screen.getByText("Por default")).toBeInTheDocument()
+
+      // rerender del mismo componente con otras props
+      rerender(<BehaviorCard behavior={{ ...mockBehavior, is_default: false }} onSelect={mockOnSelect} />)
+      expect(screen.queryByText("Por default")).not.toBeInTheDocument()
     })
   })
 
