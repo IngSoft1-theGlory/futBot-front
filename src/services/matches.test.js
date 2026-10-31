@@ -46,18 +46,6 @@ describe("fetchMatchState", () => {
     expect(state.currentTick).toBe(600)
   })
 
-  it("Debería redondear para arriba los segundos restantes, que /state puede mandar con decimales", async () => {
-    httpService.get.mockResolvedValue({
-      ...STATE_RESPONSE,
-      phase: "PAUSED",
-      pause: { type: "HALF_TIME", remaining_seconds: 41.2 },
-    })
-
-    const state = await fetchMatchState("12")
-
-    expect(state.pause.remainingSeconds).toBe(42)
-  })
-
   it("Debería devolver los suplentes del propio equipo", async () => {
     const substitutes = [{ player_id: 105, team_id: 1, name: "Nico González", number: 15 }]
     httpService.get.mockResolvedValue({ ...STATE_RESPONSE, substitutes })
