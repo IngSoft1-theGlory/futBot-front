@@ -19,7 +19,7 @@ const ONE_SECOND_MS = 1000
 //
 // Devuelve lo que la pantalla necesita para dibujarse:
 //   status:       "loading" | "ready" | "connection-error" | "not-participant" | "not-found"
-//   match:        estado del partido { currentTick, totalTicks, score, ball, players, pause } NOTA = pause es null si no hay pausa, o { type, remainingSeconds } si la hay
+//   match:        estado del partido { currentTick, totalTicks, score, ball, players, substitutes, pause } NOTA = pause es null si no hay pausa, o { type, remainingSeconds } si la hay
 //   teams:        { home, away } con { id, name, logo }
 //   reconnecting: true mientras la conexión en vivo está cortada
 //   retry:        función para volver a intentar después de un error de conexión

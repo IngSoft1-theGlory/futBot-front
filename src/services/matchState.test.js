@@ -175,6 +175,18 @@ describe("sustituciones", () => {
     expect(result.players[0]).toBe(baseMatch.players[0])
   })
 
+  it("Debería usar los datos del suplente que entra, sin pedirlos de nuevo, y mandar al banco al que sale", () => {
+    const bench = { player_id: 7, team_id: 2, name: "Nico González", number: 11, attributes: { speed: 70 } }
+    const matchWithBench = { ...baseMatch, substitutes: [bench] }
+
+    const result = applySubstitution(matchWithBench, 2, 7)
+
+    expect(result.players[1]).toMatchObject({ name: "Nico González", attributes: { speed: 70 }, position: { x: 90, y: 20 } })
+    expect(playersMissingDetails(result)).toEqual([])
+    expect(result.substitutes.map((player) => player.player_id)).toEqual([2])
+    expect(matchWithBench.substitutes).toEqual([bench]) // no modifica el original
+  })
+
   it("No debería cambiar nada si el que sale no está en cancha o el que entra ya está", () => {
     expect(applySubstitution(baseMatch, 99, 7)).toBe(baseMatch)
     expect(applySubstitution(baseMatch, 2, 1)).toBe(baseMatch)

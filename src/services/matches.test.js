@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 // Se reemplaza el cliente HTTP por uno falso: así controlamos qué "responde el backend"
 vi.mock("./createhttpService", async (importOriginal) => {
   const original = await importOriginal()
-  return { ...original, httpService: { get: vi.fn() } }
+  return { ...original, httpService: { get: vi.fn(), post: vi.fn() } }
 })
 
 import { httpService } from "./createhttpService"
-import { fetchMatchState } from "./matches"
+import { fetchMatchState, requestSubstitution } from "./matches"
 
 // Respuesta de GET /matches/{matchId}/state con un partido en juego
 const STATE_RESPONSE = {
@@ -46,6 +46,23 @@ describe("fetchMatchState", () => {
     expect(state.currentTick).toBe(600)
   })
 
+  it("Debería devolver los suplentes del propio equipo", async () => {
+    const substitutes = [{ player_id: 105, team_id: 1, name: "Nico González", number: 15 }]
+    httpService.get.mockResolvedValue({ ...STATE_RESPONSE, substitutes })
+
+    const state = await fetchMatchState("12")
+
+    expect(state.substitutes).toEqual(substitutes)
+  })
+
+  it("Debería devolver una lista vacía si /state no trae suplentes", async () => {
+    httpService.get.mockResolvedValue(STATE_RESPONSE)
+
+    const state = await fetchMatchState("12")
+
+    expect(state.substitutes).toEqual([])
+  })
+
   it.each([
     { caso: "el partido está en juego", response: STATE_RESPONSE },
     {
@@ -59,5 +76,22 @@ describe("fetchMatchState", () => {
     const state = await fetchMatchState("12")
 
     expect(state.pause).toBeNull()
+  })
+})
+
+describe("requestSubstitution", () => {
+  beforeEach(() => {
+    httpService.post.mockReset()
+  })
+
+  it("Debería pedir la sustitución al equipo y partido indicados, con quién sale y quién entra", async () => {
+    httpService.post.mockResolvedValue({})
+
+    await requestSubstitution(12, 1, 101, 105)
+
+    expect(httpService.post).toHaveBeenCalledWith("/matches/12/teams/1/substitutions", {
+      player_out_id: 101,
+      player_in_id: 105,
+    })
   })
 })
