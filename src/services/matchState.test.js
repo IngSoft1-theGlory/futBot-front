@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, startPause, finishPause, countDownPause } from "./matchState"
+import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, startPause, finishPause, countDownPause } from "./matchState"
 
 const baseMatch = {
   currentTick: 10,
@@ -40,12 +40,28 @@ describe("applyTick", () => {
     expect(result.players[0].attributes).toEqual({ speed: 50 })
   })
 
-  it("no toca a los jugadores que no vienen en el tick", () => {
+  it("Debería sacar de la cancha al jugador que dejó de venir en el tick (fue sustituido)", () => {
     const tick = { current_tick: 11, players: [{ player_id: 1, position: { x: 1, y: 1 }, current_action: "RUN" }] }
 
     const result = applyTick(baseMatch, tick)
 
-    expect(result.players[1]).toBe(baseMatch.players[1])
+    expect(result.players.map((player) => player.player_id)).toEqual([1])
+  })
+
+  it("Debería agregar al jugador que entró, marcado para pedir sus datos", () => {
+    const tick = {
+      current_tick: 11,
+      players: [
+        { player_id: 1, team_id: 1, position: { x: 1, y: 1 }, current_action: "RUN" },
+        { player_id: 7, team_id: 2, position: { x: 90, y: 20 }, current_action: "IDLE" },
+      ],
+    }
+
+    const result = applyTick(baseMatch, tick)
+
+    expect(result.players.map((player) => player.player_id)).toEqual([1, 7])
+    expect(result.players[1]).toMatchObject({ team_id: 2, position: { x: 90, y: 20 }, needsDetails: true })
+    expect(playersMissingDetails(result)).toEqual([7])
   })
 
   it("ignora un tick más viejo que el actual", () => {
@@ -147,5 +163,31 @@ describe("applyBehaviorChange", () => {
     expect(result.players[0].behavior_id).toBe(8)
     expect(result.players[0].position).toEqual({ x: 10, y: 10 })
     expect(result.players[1]).toBe(baseMatch.players[1])
+  })
+})
+
+describe("sustituciones", () => {
+  it("Debería mostrar al que entró en el lugar del que salió", () => {
+    const result = applySubstitution(baseMatch, 2, 7)
+
+    expect(result.players.map((player) => player.player_id)).toEqual([1, 7])
+    expect(result.players[1]).toMatchObject({ team_id: 2, position: { x: 90, y: 20 }, needsDetails: true })
+    expect(result.players[0]).toBe(baseMatch.players[0])
+  })
+
+  it("No debería cambiar nada si el que sale no está en cancha o el que entra ya está", () => {
+    expect(applySubstitution(baseMatch, 99, 7)).toBe(baseMatch)
+    expect(applySubstitution(baseMatch, 2, 1)).toBe(baseMatch)
+  })
+
+  it("Debería completar los datos del que entró conservando su posición", () => {
+    const substituted = applySubstitution(baseMatch, 2, 7)
+    const fresh = [{ player_id: 7, team_id: 2, name: "Nico González", number: 11, attributes: { speed: 70 } }]
+
+    const result = applyPlayerDetails(substituted, fresh)
+
+    expect(result.players[1]).toMatchObject({ name: "Nico González", number: 11, position: { x: 90, y: 20 } })
+    expect(result.players[1].needsDetails).toBeUndefined()
+    expect(playersMissingDetails(result)).toEqual([])
   })
 })

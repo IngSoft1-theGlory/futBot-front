@@ -151,3 +151,44 @@ describe("useMatchLive - pausas", () => {
     expect(result.current.match.pause.remainingSeconds).toBe(40)
   })
 })
+
+describe("useMatchLive - sustituciones", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubGlobal("WebSocket", FakeWebSocket)
+    FakeWebSocket.lastInstance = null
+    fetchMatchTeams.mockResolvedValue(TEAMS)
+    requestMatchWebsocketUrl.mockResolvedValue("ws://localhost:8000/ws/v1/matches/12?token=t1")
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  it("Debería mostrar al que entró y no al que salió cuando el tick trae la sustitución", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    fetchMatchState.mockResolvedValue({
+      ...MATCH_IN_PROGRESS,
+      players: [{ player_id: 105, team_id: 1, name: "Nico González", number: 11 }],
+    })
+
+    serverSends({ ...NEXT_TICK, players: [{ player_id: 105, team_id: 1, position: { x: 70, y: 25 }, current_action: "RUN" }] })
+    await flush()
+
+    expect(result.current.match.players).toHaveLength(1)
+    expect(result.current.match.players[0]).toMatchObject({ player_id: 105, name: "Nico González", position: { x: 70, y: 25 } })
+  })
+
+  it("Debería aplicar en la cancha una sustitución confirmada, aunque el partido esté en pausa", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    serverSends(PAUSE_STARTED)
+
+    act(() => result.current.substitutePlayer(101, 105))
+
+    expect(result.current.match.players.map((player) => player.player_id)).toEqual([105])
+    expect(result.current.match.players[0].position).toEqual({ x: 50, y: 30 })
+  })
+})
