@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { renderHook, act, cleanup } from "@testing-library/react"
+import { renderHook, act, cleanup, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 /*
 // ---------- Mocks ----------
@@ -14,6 +14,7 @@ vi.mock("../services/matches", () => ({
 
 vi.mock("./useGlobalEvent", () => ({ useGlobalEvent: vi.fn() }))
 
+import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams, requestMatchWebsocketUrl } from "../services/matches"
 import { useMatchLive } from "./useMatchLive"
 
@@ -190,5 +191,35 @@ describe("useMatchLive - sustituciones", () => {
 
     expect(result.current.match.players.map((player) => player.player_id)).toEqual([105])
     expect(result.current.match.players[0].position).toEqual({ x: 50, y: 30 })
+  })
+
+  it("No debería volver a pedir /state si el que entra ya estaba en la lista de suplentes", async () => {
+    const substitute = { player_id: 105, team_id: 1, name: "Nico González", number: 11 }
+    const result = await renderMatchLive({ ...MATCH_IN_PROGRESS, substitutes: [substitute] })
+    serverSends(PAUSE_STARTED)
+
+    act(() => result.current.substitutePlayer(101, 105))
+    await flush()
+
+    expect(result.current.match.players[0]).toMatchObject({ name: "Nico González", position: { x: 50, y: 30 } })
+    expect(result.current.match.substitutes.map((player) => player.player_id)).toEqual([101])
+    expect(fetchMatchState).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("useMatchLive - usuario que no participa", () => {
+  afterEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+  })
+
+  it("Debería quedar en not-participant y sin datos del partido si el back responde 403", async () => {
+    fetchMatchTeams.mockResolvedValue(TEAMS)
+    fetchMatchState.mockRejectedValue(new ApiError(403, "UNAUTHORIZED_ACTION", "No participás"))
+
+    const { result } = renderHook(() => useMatchLive("12"), { wrapper: MemoryRouter })
+    await waitFor(() => expect(result.current.status).toBe("not-participant"))
+
+    expect(result.current.match).toBeNull()
   })
 })

@@ -63,25 +63,28 @@ function playersOnPitch(currentPlayers, tickPlayers) {
 // ---------- Sustituciones ----------
 
 // Aplica una sustitución confirmada por el back: el que entra ocupa el lugar
-// (posición) del que sale, y el que sale deja la cancha. Sirve para mostrar el cambio
-// enseguida, aunque el partido esté en pausa y no lleguen ticks.
-// El que entra queda con needsDetails hasta que lleguen sus datos de /state.
+// (posición) del que sale, y el que sale deja la cancha y pasa al banco. Sirve para
+// mostrar el cambio enseguida, aunque el partido esté en pausa y no lleguen ticks.
+// Si el que entra no está en la lista de suplentes, queda con needsDetails hasta que
+// lleguen sus datos de /state.
 export function applySubstitution(match, playerOutId, playerInId) {
   const playerOut = match.players.find((player) => player.player_id === playerOutId)
   const alreadyOnPitch = match.players.some((player) => player.player_id === playerInId)
   if (!playerOut || alreadyOnPitch) return match
 
+  const substitutes = match.substitutes ?? []
+  const fromBench = substitutes.find((player) => player.player_id === playerInId)
+
   const playerIn = {
-    player_id: playerInId,
-    team_id: playerOut.team_id,
+    ...(fromBench ?? { player_id: playerInId, team_id: playerOut.team_id, needsDetails: true }),
     position: playerOut.position,
     current_action: "IDLE",
-    needsDetails: true,
   }
 
   return {
     ...match,
     players: match.players.map((player) => (player.player_id === playerOutId ? playerIn : player)),
+    substitutes: substitutes.map((player) => (player.player_id === playerInId ? playerOut : player)),
   }
 }
 

@@ -10,6 +10,7 @@ import { httpService } from "./createhttpService"
 //   { current_tick, total_ticks, phase, score: { home, away }, ball: { x, y },
 //     players: [{ player_id, team_id, name, number, attributes, behavior_id,
 //                 position: { x, y }, current_action }],
+//     substitutes: [{ player_id, team_id, name, number, attributes, behavior_id }],   <- solo los del propio equipo
 //     pause: { type, remaining_seconds } }   <- cuando phase es "PAUSED"
 export async function fetchMatchState(matchId) {
   const data = await httpService.get(`/matches/${matchId}/state`)
@@ -20,14 +21,16 @@ export async function fetchMatchState(matchId) {
     score: data.score,
     ball: data.ball ?? null,
     players: data.players ?? [],
+    substitutes: data.substitutes ?? [],
     pause: toPause(data),
   }
 }
 
 // Convierte la pausa que informa /state a { type, remainingSeconds }, si el partido NO esta en pausa devuelve null, así /state no activa ninguna pausa
+// remaining_seconds puede traer decimales (ej: 41.2): se redondea para arriba, porque la cuenta regresiva va de a segundos enteros
 function toPause(data) {
   if (data.phase !== "PAUSED" || !data.pause) return null
-  return { type: data.pause.type, remainingSeconds: data.pause.remaining_seconds }
+  return { type: data.pause.type, remainingSeconds: Math.ceil(data.pause.remaining_seconds) }
 }
 
 // Pide los datos de los equipos (GET /friendly/{matchId}): nombre, logo y cuál es el local.
@@ -64,4 +67,13 @@ export async function requestMatchWebsocketUrl(matchId) {
 // Respuesta: { match_id, player_id, behavior_id }
 export async function changePlayerBehavior(matchId, playerId, behaviorId) {
   return httpService.put(`/matches/${matchId}/players/${playerId}/behavior`, { behavior_id: behaviorId })
+}
+
+// Pide una sustitución durante una pausa (POST /matches/{matchId}/teams/{teamId}/substitutions):
+// sale un titular y entra un suplente. Si el back la rechaza, httpService lanza un ApiError.
+export async function requestSubstitution(matchId, teamId, playerOutId, playerInId) {
+  return httpService.post(`/matches/${matchId}/teams/${teamId}/substitutions`, {
+    player_out_id: playerOutId,
+    player_in_id: playerInId,
+  })
 }
