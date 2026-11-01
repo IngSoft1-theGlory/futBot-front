@@ -11,8 +11,8 @@ const ONE_SECOND_MS = 1000
 // Este hook hace TODO el trabajo "invisible" de la pantalla del partido:
 //   1. carga el estado inicial (partido + equipos) en paralelo
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
-//   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva
-//      y los penales (PENALTIES_STARTED / PENALTIES_FINISHED) en match.isPenalties
+//   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva,
+//      y también los penales (PENALTIES_STARTED / PENALTIES_FINISHED)
 //   4. si la conexión se corta, avisa y al volver pide el estado de nuevo
 //   5. cuando entra un jugador nuevo a la cancha (sustitución), pide sus datos a /state
 //   6. cuando el partido termina, navega al resultado
@@ -44,8 +44,7 @@ export function useMatchLive(matchId) {
     if (data?.match_id === Number(matchId)) navigate(resultPath, { replace: true })
   })
 
-  // Fin del partido, forma 2: el tick actual alcanzó el total de ticks.
-  // Si el marcador está empatado puede haber penales: no se sale acá, se espera MATCH_FINISHED (forma 1)
+  // Fin del partido, forma 2: el tick actual alcanzó el total de ticks (con empate se espera la forma 1)
   const isOver = match ? isMatchOver(match) && !mightGoToPenalties(match) : false
   useEffect(() => {
     if (isOver) navigate(resultPath, { replace: true })
