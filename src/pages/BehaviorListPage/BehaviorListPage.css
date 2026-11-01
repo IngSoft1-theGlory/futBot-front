@@ -30,7 +30,13 @@
 }
 
 .behavior-page__message--error {
-  color: #fca5a5;
+  margin-bottom: 1.2rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
 }
 
 .behavior-page__list {
@@ -50,4 +56,26 @@
 .behavior-page__back:hover {
   color: #a5b4fc;
   text-decoration: underline;
+}
+
+.behavior-page__success {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  color: #86efac;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(134, 239, 172, 0.4);
+  border-radius: 0.5rem;
+}
+
+.behavior-page__actions {
+  font-size: 1.15rem;
+  padding: 1rem 2rem;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  justify-content: center;
 }

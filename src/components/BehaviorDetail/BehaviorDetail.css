@@ -15,7 +15,6 @@
 
 /* Botón con aspecto de enlace, igual que "Volver al inicio" */
 .behavior-detail__back {
-  align-self: flex-start;
   padding: 0;
   font: inherit;
   font-weight: 600;
@@ -41,7 +40,13 @@
 }
 
 .behavior-detail__message--error {
-  color: #fca5a5;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
 }
 
 .behavior-detail__content {
@@ -58,7 +63,7 @@
 }
 
 .behavior-detail__name {
-  margin: 0;
+  margin: 0 1rem 0;
   font-size: 1.5rem;
   font-weight: 700;
   color: #f8fafc;
@@ -78,7 +83,7 @@
 
 .behavior-detail__subtitle {
   margin: 0.5rem 0 0;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -87,6 +92,8 @@
 
 .behavior-detail__description {
   color: #cbd5e1;
+  margin-left: 0.80rem;
+  margin-right: 0.80rem;
   overflow-wrap: anywhere;
 }
 
@@ -106,4 +113,13 @@
   background: #020617;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 0.5rem;
+}
+
+.behavior-detail__toolbar {
+  font-size: 1.15rem;
+  padding: 0.5rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }

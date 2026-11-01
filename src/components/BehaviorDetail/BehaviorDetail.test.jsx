@@ -26,9 +26,10 @@ const mockBehavior = {
   code: CODE,
   is_default: true,
 }
+const mockCustom = { ...mockBehavior, is_default: false }
 
-function renderDetail(onBack = vi.fn()) {
-  return render(<BehaviorDetail behaviorId={7} onBack={onBack} />)
+function renderDetail(onBack = vi.fn(), onEdit = vi.fn()) {
+  return render(<BehaviorDetail behaviorId={7} onBack={onBack} onEdit={onEdit} />)
 }
 
 describe("BehaviorDetail", () => {
@@ -48,45 +49,34 @@ describe("BehaviorDetail", () => {
 
       expect(httpService.get).toHaveBeenCalledWith("/behaviors/7")
       expect(screen.getByText(/cargando comportamiento/i)).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument()
     })
   })
 
   describe("Respuesta 200", () => {
-    it("Debería mostrar nombre, descripción, código y el indicador 'Por default'", async () => {
+    it("Debería ser de solo lectura si es un comportamiento por default, sin permitir editar", async () => {
       httpService.get.mockResolvedValue(mockBehavior)
-      renderDetail()
+      const { container } = renderDetail()
 
       expect(await screen.findByRole("heading", { name: "Atacar arco" })).toBeInTheDocument()
       expect(screen.getByText(mockBehavior.description)).toBeInTheDocument()
       expect(screen.getByText("Por default")).toBeInTheDocument()
+      expect(container.querySelector("pre").textContent).toBe(CODE)   // con los espacios y saltos de línea
       expect(screen.queryByText(/cargando comportamiento/i)).not.toBeInTheDocument()
-    })
-
-    it("Debería mostrar el código en un bloque <pre> respetando la indentación", async () => {
-      httpService.get.mockResolvedValue(mockBehavior)
-      const { container } = renderDetail()
-      await screen.findByRole("heading", { name: "Atacar arco" })
-
-      const codeBlock = container.querySelector("pre")
-      expect(codeBlock).not.toBeNull()
-      expect(codeBlock.textContent).toBe(CODE)   // mismo texto, con los espacios y saltos de línea
-    })
-
-    it("No debería mostrar el indicador 'Por default' si is_default es false", async () => {
-      httpService.get.mockResolvedValue({ ...mockBehavior, is_default: false })
-      renderDetail()
-      await screen.findByRole("heading", { name: "Atacar arco" })
-
-      expect(screen.queryByText("Por default")).not.toBeInTheDocument()
-    })
-
-    it("Debería ser de solo lectura: sin campos editables ni otras acciones además de volver", async () => {
-      httpService.get.mockResolvedValue(mockBehavior)
-      renderDetail()
-      await screen.findByRole("heading", { name: "Atacar arco" })
-
+      // Sin campos editables, y el único botón es "Volver a la colección"
       expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
-      expect(screen.getAllByRole("button")).toHaveLength(1)   // solo "Volver a la colección"
+      expect(screen.getAllByRole("button")).toHaveLength(1)
+    })
+
+    it("Debería mostrar el botón 'Editar' (y no el indicador) en un comportamiento propio, y llamar a onEdit al hacer click", async () => {
+      httpService.get.mockResolvedValue(mockCustom)
+      const onEdit = vi.fn()
+      renderDetail(vi.fn(), onEdit)
+
+      await userEvent.click(await screen.findByRole("button", { name: /editar/i }))
+
+      expect(onEdit).toHaveBeenCalledTimes(1)
+      expect(screen.queryByText("Por default")).not.toBeInTheDocument()
     })
   })
 
@@ -118,6 +108,7 @@ describe("BehaviorDetail", () => {
 
       expect(await screen.findByRole("alert")).toHaveTextContent(mensajeEsperado)
       expect(screen.queryByText(/cargando comportamiento/i)).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument()
     })
 
     // Acá usamos la sesión, las rutas y el login reales para probar el recorrido completo
@@ -135,7 +126,7 @@ describe("BehaviorDetail", () => {
           <SessionProvider>
             <Routes>
               <Route element={<ProtectedRoute />}>
-                <Route path="/behaviors" element={<BehaviorDetail behaviorId={7} onBack={vi.fn()} />} />
+                <Route path="/behaviors" element={<BehaviorDetail behaviorId={7} onBack={vi.fn()} onEdit={vi.fn()} />} />
               </Route>
               <Route element={<PublicOnlyRoute />}>
                 <Route path="/login" element={<LoginPage />} />
