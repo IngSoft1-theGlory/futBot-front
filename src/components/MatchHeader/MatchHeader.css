@@ -50,7 +50,7 @@
   font-variant-numeric: tabular-nums; /* dígitos del mismo ancho: el reloj no "baila" */
 }
 
-/* Goles de penales a los costados del marcador: más chicos y en índigo */
+/* Goles de penales */
 .match-header__penalties {
   font-size: 1.5rem;
   font-weight: 600;
@@ -58,7 +58,7 @@
   vertical-align: middle;
 }
 
-/* "En Penales" en lugar del reloj */
+/* Cartel "En Penales" */
 .match-header__clock--penalties {
   padding: 2px 12px;
   border: 1px solid rgba(129, 140, 248, 0.5);

@@ -11,8 +11,7 @@ const ATTRIBUTES = [
   { key: "strength", label: "Fuerza" },
 ]
 
-// isPenalties: durante la tanda cada jugador tiene el comportamiento de arquero o de pateador,
-// así que no se puede cambiar: en lugar del selector se muestra un aviso
+// En penales el back asigna arquero o pateador, así que no se puede cambiar el comportamiento
 function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, isPenalties = false, onBehaviorChanged }) {
   const [behavior, setBehavior] = useState(null)
   const [isLoading, setIsLoading] = useState(false)

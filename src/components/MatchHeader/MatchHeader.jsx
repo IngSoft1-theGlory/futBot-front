@@ -21,10 +21,7 @@ export function formatClock(currentTick, totalTicks) {
 }
 
 
-/*
-  penalties:   { home, away } con los goles de penales, o null si no hubo penales
-  isPenalties: true mientras se patea la tanda (en lugar del reloj se muestra "En Penales")
-*/
+// penalties: goles de penales { home, away }, o null si no hubo penales
 function MatchHeader({ homeTeam, awayTeam, score, currentTick, totalTicks, penalties = null, isPenalties = false }) {
   if (!homeTeam || !awayTeam || !score) {   //Si no hay equipos o score, no renderizamos nada
     return null
@@ -40,7 +37,6 @@ function MatchHeader({ homeTeam, awayTeam, score, currentTick, totalTicks, penal
       </div>
 
       <div className="match-header__center">
-        {/* Con penales el marcador queda como "(1) 0 - 0 (0)" */}
         <p className="match-header__score">
           {penalties && <span className="match-header__penalties">({penalties.home}) </span>}
           {score.home} - {score.away}

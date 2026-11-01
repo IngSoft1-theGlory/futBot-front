@@ -1,11 +1,8 @@
 import "./Pitch.css"
 import { FIELD_CONFIG } from "../../constants/fieldConfig"
 
-// Encuadre de la cancha (viewBox) en unidades del juego.
-// - Normal: la cancha entera, con el margen alrededor.
-// - Penales: se acerca a la mitad del local (x = 0), que es donde se patean. Se mantiene
-//   la proporción de la cancha entera para que el SVG no cambie de tamaño en la pantalla:
-//   se ve todo el largo de esa mitad y se recortan las bandas de arriba y abajo.
+// En penales se muestra la mitad del local, que es donde se patean. Se mantiene la
+// proporción de la cancha entera para que el SVG no cambie de tamaño
 function getViewBox(isPenalties) {
   const { length, width, margin } = FIELD_CONFIG
   const fullWidth = length + 2 * margin
@@ -22,7 +19,6 @@ function getViewBox(isPenalties) {
 // Cancha de fútbol en SVG. El viewBox está en unidades del juego, así que los
 // children (jugadores, pelota) se dibujan directamente con las coordenadas
 // x e y que manda el backend, y la cancha escala sola al tamaño del contenedor.
-//   isPenalties: true durante la tanda de penales (encuadra el arco del local)
 function Pitch({ children, isPenalties = false }) {
   const {
     length,

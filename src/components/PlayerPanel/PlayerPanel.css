@@ -85,7 +85,7 @@
   color: #c0392b;
 }
 
-/* Aviso de que no se puede cambiar el comportamiento (durante los penales) */
+/* Aviso durante los penales */
 .player-panel__behavior .player-panel__notice {
   margin-top: 8px;
   padding: 8px 12px;

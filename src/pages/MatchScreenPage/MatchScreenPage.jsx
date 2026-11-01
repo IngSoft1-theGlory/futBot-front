@@ -71,7 +71,7 @@ function MatchPage() {
   // Buscamos el jugador seleccionado entre los del partido (null si no hay ninguno)
   const selectedPlayer = match.players.find((player) => player.player_id === selectedPlayerId) ?? null
 
-  // Goles de penales: vienen en el score (phome / paway) y son null si no hubo penales
+  // phome y paway vienen en null si no hubo penales
   const penalties = match.score?.phome != null ? { home: match.score.phome, away: match.score.paway } : null
   const isPenalties = Boolean(match.isPenalties)
 
