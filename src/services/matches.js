@@ -7,7 +7,7 @@ import { httpService } from "./createhttpService"
 // Se usa al entrar a la pantalla y cada vez que la conexión en vivo se recupera.
 //
 // Forma esperada de la respuesta:
-//   { current_tick, total_ticks, phase, score: { home, away }, ball: { x, y },
+//   { current_tick, total_ticks, phase, score: { home, away, phome, paway }, ball: { x, y },
 //     players: [{ player_id, team_id, name, number, attributes, behavior_id,
 //                 position: { x, y }, current_action }],
 //     substitutes: [{ player_id, team_id, name, number, attributes, behavior_id }],   <- solo los del propio equipo
@@ -23,6 +23,8 @@ export async function fetchMatchState(matchId) {
     players: data.players ?? [],
     substitutes: data.substitutes ?? [],
     pause: toPause(data),
+    // Al recargar en plena tanda: phase es "PENALTIES", o el score ya trae el marcador de penales
+    isPenalties: data.phase === "PENALTIES" || data.score?.phome != null,
   }
 }
 

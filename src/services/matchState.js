@@ -13,6 +13,13 @@ export function isMatchOver(match) {
   return match.totalTicks > 0 && match.currentTick >= match.totalTicks
 }
 
+// ¿Puede definirse por penales? Pasa cuando el marcador está empatado. En ese caso el último
+// tick no alcanza para dar el partido por terminado (llega ANTES que PENALTIES_STARTED):
+// hay que esperar MATCH_FINISHED. Durante la tanda el marcador reglamentario sigue empatado.
+export function mightGoToPenalties(match) {
+  return match.score?.home === match.score?.away
+}
+
 // Combina el estado actual del partido con un TICK_UPDATE.
 //
 // - Del tick se actualiza: tick, total, marcador, pelota, y posición + acción de cada jugador.
@@ -30,8 +37,9 @@ export function applyTick(match, tick) {
   // Durante una pausa el partido está congelado: marcador, reloj y cancha no cambian
   if (match.pause) return match
 
-  // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo
-  if (tick.current_tick < match.currentTick) return match
+  // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo.
+  // Durante los penales no se compara: el back puede reiniciar o repetir el número de tick
+  if (!match.isPenalties && tick.current_tick < match.currentTick) return match
 
   return {
     ...match,
@@ -114,7 +122,9 @@ export function applyPlayerDetails(match, freshPlayers) {
 // Tambien reemplaza la pausa: si mientras estuvimos desconectados la pausa terminó,
 // /state trae pause: null y la pantalla deja de mostrarla
 export function applyFullState(match, freshState) {
-  if (match && freshState.currentTick < match.currentTick) return match
+  // Durante los penales no se compara el tick, por el mismo motivo que en applyTick
+  const isPenalties = match?.isPenalties || freshState.isPenalties
+  if (match && !isPenalties && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
 }
 
@@ -157,4 +167,18 @@ export function countDownPause(match) {
     ...match,
     pause: { ...match.pause, remainingSeconds: match.pause.remainingSeconds - 1 },
   }
+}
+
+// ---------- Penales ----------
+// Mientras se patea la tanda, match.isPenalties es true.
+// El marcador de penales llega en el score de cada tick: score.phome y score.paway.
+
+// Empiezan los penales (evento PENALTIES_STARTED)
+export function startPenalties(match) {
+  return { ...match, isPenalties: true }
+}
+
+// Terminan los penales (evento PENALTIES_FINISHED). El partido termina recién con MATCH_FINISHED
+export function finishPenalties(match) {
+  return { ...match, isPenalties: false }
 }

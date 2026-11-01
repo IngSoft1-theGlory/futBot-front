@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, startPause, finishPause, countDownPause } from "./matchState"
+import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, startPause, finishPause, countDownPause, startPenalties, finishPenalties, mightGoToPenalties } from "./matchState"
 
 const baseMatch = {
   currentTick: 10,
@@ -201,5 +201,26 @@ describe("sustituciones", () => {
     expect(result.players[1]).toMatchObject({ name: "Nico González", number: 11, position: { x: 90, y: 20 } })
     expect(result.players[1].needsDetails).toBeUndefined()
     expect(playersMissingDetails(result)).toEqual([])
+  })
+})
+
+describe("penales", () => {
+  it("Debería marcar el partido en penales con startPenalties y sacarlo de la tanda con finishPenalties", () => {
+    const inPenalties = startPenalties(baseMatch)
+
+    expect(inPenalties.isPenalties).toBe(true)
+    expect(finishPenalties(inPenalties).isPenalties).toBe(false)
+  })
+
+  it("Debería aplicar los ticks de la tanda con su marcador de penales, aunque el número de tick no avance", () => {
+    const inPenalties = startPenalties({ ...baseMatch, currentTick: 600 })
+    const tick = { current_tick: 5, score: { home: 0, away: 0, phome: 1, paway: 0 } }
+
+    expect(applyTick(inPenalties, tick).score).toEqual({ home: 0, away: 0, phome: 1, paway: 0 })
+  })
+
+  it("Debería poder ir a penales solo si el marcador está empatado", () => {
+    expect(mightGoToPenalties({ score: { home: 1, away: 1 } })).toBe(true)
+    expect(mightGoToPenalties({ score: { home: 2, away: 1 } })).toBe(false)
   })
 })
