@@ -84,3 +84,13 @@
 .player-panel__error {
   color: #c0392b;
 }
+
+/* Aviso de que no se puede cambiar el comportamiento (durante los penales) */
+.player-panel__behavior .player-panel__notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(129, 140, 248, 0.12);
+  color: #c7d2fe;
+  font-size: 0.85rem;
+}
