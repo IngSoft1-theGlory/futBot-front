@@ -124,7 +124,8 @@ export function openMatchSocket(matchId, callbacks) {
       // { "event": "TICK_UPDATE", "current_tick": 10, ... }
       // { "event": "PAUSE_STARTED", "type": "...", "duration_seconds": 30, "current_tick": 600 }
       // { "event": "PAUSE_FINISHED", "type": "..." }
-      // { "event": "PENALTIES_STARTED", "match_id": 12 }  /  { "event": "PENALTIES_FINISHED", "match_id": 12 }
+      // { "event": "PENALTIES_STARTED", "match_id": 12 }
+      // { "event": "PENALTIES_FINISHED", "match_id": 12 }
       if (message?.event === "TICK_UPDATE") onTick(message)
       else if (message?.event === "PAUSE_STARTED") onPauseStarted(message)
       else if (message?.event === "PAUSE_FINISHED") onPauseFinished(message)

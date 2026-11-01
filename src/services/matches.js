@@ -23,7 +23,7 @@ export async function fetchMatchState(matchId) {
     players: data.players ?? [],
     substitutes: data.substitutes ?? [],
     pause: toPause(data),
-    // Al recargar en plena tanda: phase es "PENALTIES", o el score ya trae el marcador de penales
+    // Sirve si se recarga la pantalla durante los penales
     isPenalties: data.phase === "PENALTIES" || data.score?.phome != null,
   }
 }
