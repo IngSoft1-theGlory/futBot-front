@@ -111,6 +111,23 @@ describe("applyFullState", () => {
 
     expect(applyFullState(pausedMatch, { ...baseMatch, pause: null }).pause).toBeNull()
   })
+
+  it("Debería usar la pelota y la posición de los jugadores que trae /state", () => {
+    const fresh = {
+      currentTick: 10,
+      totalTicks: 600,
+      score: { home: 0, away: 0 },
+      ball: { x: 62, y: 20 },
+      players: [{ player_id: 1, team_id: 1, name: "Ana", position: { x: 15, y: 12 }, current_action: "idle" }],
+      pause: { type: "HALF_TIME", remainingSeconds: 12 },
+    }
+
+    const result = applyFullState(baseMatch, fresh)
+
+    expect(result.ball).toEqual({ x: 62, y: 20 })
+    expect(result.players[0].position).toEqual({ x: 15, y: 12 })
+    expect(result.pause).toEqual({ type: "HALF_TIME", remainingSeconds: 12 })
+  })
 })
 
 describe("pausas", () => {
@@ -141,6 +158,22 @@ describe("pausas", () => {
     expect(countDownPause(pauseAtZero)).toBe(pauseAtZero)
     expect(countDownPause(notPaused)).toBe(notPaused)
   })
+
+  it("Debería ignorar una pausa duplicada y conserva el estado actual", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 12 }}
+    const result = startPause(pausedMatch, {
+      type: "HT",
+      duration_seconds: 20,
+      current_tick: 120,
+    })
+
+    expect(result).toBe(pausedMatch)
+  })
+
+  it("Deberia devolver al no haber una pausa el estado del partido", () => {
+    const notPaused = { ...baseMatch, pause: null }
+    expect(finishPause(notPaused)).toBe(notPaused)
+  })  
 })
 
 describe("isMatchOver", () => {

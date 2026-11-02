@@ -94,7 +94,8 @@ export function playersMissingDetails(match) {
 }
 
 // Completa los datos de los jugadores marcados con needsDetails con los de /state.
-// La posición y la acción se conservan, porque /state no las trae.
+// Se conservan la posición y la acción que ya tiene el front,
+// recibidas por los ticks o la sustitución.
 export function applyPlayerDetails(match, freshPlayers) {
   const freshById = new Map(freshPlayers.map((player) => [player.player_id, player]))
 
@@ -113,6 +114,7 @@ export function applyPlayerDetails(match, freshPlayers) {
 // Solo lo acepta si es igual o más nuevo que el que ya tenemos.
 // Tambien reemplaza la pausa: si mientras estuvimos desconectados la pausa terminó,
 // /state trae pause: null y la pantalla deja de mostrarla
+// /state tambien trae la posicion de la pelota y de los jugadores
 export function applyFullState(match, freshState) {
   if (match && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
@@ -136,6 +138,10 @@ export function applyBehaviorChange(match, playerId, behaviorId) {
 // Empieza una pausa (evento PAUSE_STARTED).
 // Al principio faltan todos los segundos de la pausa: duration_seconds.
 export function startPause(match, message) {
+  // Si ya hay una pausa activa, se ignora el nuevo evento de pausa para no reiniciar
+  // la cuenta regresiva.
+  if (match.pause) return match 
+
   return {
     ...match,
     pause: { type: message.type, remainingSeconds: message.duration_seconds },
@@ -144,6 +150,9 @@ export function startPause(match, message) {
 
 // Termina la pausa (evento PAUSE_FINISHED): el partido vuelve a "sin pausa".
 export function finishPause(match) {
+  // Si no hay una pausa activa, se devuelve el mismo estado.
+  if (!match.pause) return match
+
   return { ...match, pause: null }
 }
 

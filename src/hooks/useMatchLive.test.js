@@ -151,6 +151,73 @@ describe("useMatchLive - pausas", () => {
     await waitSeconds(2)
     expect(result.current.match.pause.remainingSeconds).toBe(40)
   })
+
+  it("Debería mostrar la posicion de la pelota y jugadores en una pausa ya empezada", async () => {
+    const result = await renderMatchLive({ ...MATCH_IN_PROGRESS, pause: {type: "CB", remainingSeconds: 7 } })
+
+    expect(result.current.match.ball).toEqual({ x: 52.5, y: 34 })
+    expect(result.current.match.players[0].position).toEqual({ x: 50, y: 30 })
+  })
+
+  it("Debería ignorar un PAUSE_STARTED repetido y seguir con la cuenta regresiva", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    serverSends({ ...PAUSE_STARTED, duration_seconds: 20 })
+    await waitSeconds(5)
+
+    expect(result.current.match.pause.remainingSeconds).toBe(15)
+
+    serverSends({ ...PAUSE_STARTED, duration_seconds: 20 })
+    
+    await waitSeconds(2)
+    expect(result.current.match.pause.remainingSeconds).toBe(13)
+  })
+
+  it("Debería ignorar un PAUSE_FINISHED repetido y seguir el partido con normalidad", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    serverSends(PAUSE_STARTED)
+    serverSends(PAUSE_FINISHED)
+    
+    const afterFirst = result.current.match
+    serverSends(PAUSE_FINISHED)   // duplicado
+
+    expect(result.current.match).toBe(afterFirst)
+  })
+
+  it("Debería cerrar el socket y detener la cuenta regresiva al salir de la pantalla", async () => {
+    const closeSpy = vi.spyOn(FakeWebSocket.prototype, "close")
+    fetchMatchState.mockResolvedValue(MATCH_IN_PROGRESS)
+    const { unmount } = renderHook(() => useMatchLive("12"), { wrapper: MemoryRouter })
+    await flush()
+    serverSends(PAUSE_STARTED)  // La pausa activa una cuenta regresiva.
+
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+    unmount()
+
+    expect(closeSpy).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(0)
+    
+    closeSpy.mockRestore()
+  })
+
+  it("Debería pedir /state al reconectar y reflejar la pausa que empezó mientras estaba desconectado", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    act(() => FakeWebSocket.lastInstance.onopen())    // primera conexión
+    act(() => FakeWebSocket.lastInstance.onclose())   // se corta
+
+    fetchMatchState.mockResolvedValue({ 
+      ...MATCH_IN_PROGRESS,
+      currentTick: 610,
+      pause: { type: "HT", remainingSeconds: 12 } 
+    })
+    await waitSeconds(1)                              // el reintento espera 1 s
+    act(() => FakeWebSocket.lastInstance.onopen())    // reconecta
+    await flush()
+
+    expect(fetchMatchState).toHaveBeenNthCalledWith(2, "12")
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 12 })
+    expect(result.current.match.currentTick).toBe(610)
+  })
 })
 
 describe("useMatchLive - sustituciones", () => {
