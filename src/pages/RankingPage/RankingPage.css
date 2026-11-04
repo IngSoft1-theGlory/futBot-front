@@ -1,0 +1,141 @@
+.ranking-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2.5rem clamp(1rem, 4vw, 3rem);
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.14), transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.22), transparent 45%),
+    #0b1020;
+}
+
+/* La tabla y el encabezado comparten el mismo ancho */
+.ranking-page > .data-table-container,
+.ranking-page__header {
+  width: 100%;
+  max-width: 960px;
+}
+
+.ranking-page__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+}
+
+.ranking-page__icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #1c1203;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  box-shadow: 0 10px 24px -10px rgba(245, 158, 11, 0.7);
+}
+
+.ranking-page__title {
+  margin: 0;
+  font-size: 2rem;
+  color: #f8fafc;
+}
+
+.ranking-page__subtitle {
+  margin: 0.25rem 0 0;
+  color: #94a3b8;
+}
+
+.ranking-page__message {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.ranking-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fca5a5;
+}
+
+.ranking-page__error p {
+  margin: 0;
+}
+
+.ranking-position {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.ranking-position--gold {
+  color: #1c1203;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+
+.ranking-position--silver {
+  color: #0f172a;
+  background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+}
+
+.ranking-position--bronze {
+  color: #1c0f05;
+  background: linear-gradient(135deg, #fdba74, #c2410c);
+}
+
+.ranking-club {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ranking-club__logo {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ranking-club__logo--empty {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.ranking-club__name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ranking-points {
+  color: #f8fafc;
+}
+
+.ranking-page__pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #94a3b8;
+}
+
+.ranking-page__back {
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+}
+
+.ranking-page__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
