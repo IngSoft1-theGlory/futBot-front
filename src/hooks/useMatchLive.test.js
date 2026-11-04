@@ -130,7 +130,7 @@ describe("useMatchLive - pausas", () => {
     const result = await renderMatchLive(MATCH_IN_PROGRESS)
     serverSends(PAUSE_STARTED)
 
-    serverSends(NEXT_TICK)
+    serverSends({ ...NEXT_TICK, current_tick: 600 })
     expect(result.current.match.currentTick).toBe(600)
     expect(result.current.match.score).toEqual({ home: 1, away: 0 })
     expect(result.current.match.ball).toEqual({ x: 52.5, y: 34 })
@@ -200,6 +200,18 @@ describe("useMatchLive - pausas", () => {
     closeSpy.mockRestore()
   })
 
+  it("Debería pedir /state al abrir la conexión por primera vez y mostrar la pausa que empezó", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+    // La pausa empezó entre la carga inicial y la apertura del socket: PAUSE_STARTED no llegó
+    fetchMatchState.mockResolvedValue({ ...MATCH_IN_PROGRESS, pause: { type: "HT", remainingSeconds: 19 } })
+
+    act(() => FakeWebSocket.lastInstance.onopen())
+    await flush()
+
+    expect(fetchMatchState).toHaveBeenNthCalledWith(2, "12")
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 19 })
+  })
+
   it("Debería pedir /state al reconectar y reflejar la pausa que empezó mientras estaba desconectado", async () => {
     const result = await renderMatchLive(MATCH_IN_PROGRESS)
     act(() => FakeWebSocket.lastInstance.onopen())    // primera conexión
@@ -214,7 +226,8 @@ describe("useMatchLive - pausas", () => {
     act(() => FakeWebSocket.lastInstance.onopen())    // reconecta
     await flush()
 
-    expect(fetchMatchState).toHaveBeenNthCalledWith(2, "12")
+    expect(fetchMatchState).toHaveBeenCalledTimes(3)
+    expect(fetchMatchState).toHaveBeenNthCalledWith(3, "12")
     expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 12 })
     expect(result.current.match.currentTick).toBe(610)
   })

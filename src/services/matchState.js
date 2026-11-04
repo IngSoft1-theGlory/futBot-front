@@ -21,20 +21,24 @@ export function isMatchOver(match) {
 // - El tick trae a los jugadores que están EN CANCHA, así que manda él:
 //   el que dejó de venir salió (sustitución) y se saca; el que viene y no conocíamos
 //   entró, y se agrega marcado con needsDetails hasta que lleguen sus datos de /state.
+// - Durante una pausa el motor no manda ticks. Un tick igual o más viejo se ignora; uno más
+//   nuevo significa que la pausa ya terminó y la cierra.
 //
 // No modifica `match`: devuelve un objeto nuevo (así React detecta el cambio y redibuja).
 export function applyTick(match, tick) {
   // Un mensaje sin tick no sirve: se deja todo como estaba
   if (!tick || !Number.isFinite(tick.current_tick)) return match
 
-  // Durante una pausa el partido está congelado: marcador, reloj y cancha no cambian
-  if (match.pause) return match
+  // Durante una pausa el partido está congelado: marcador, reloj y cancha no cambian.
+  // Se ignoran los ticks actuales o viejos y, si hay uno nuevo, se reanuda el partido.
+  if (match.pause && tick.current_tick <= match.currentTick) return match
 
   // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo
   if (tick.current_tick < match.currentTick) return match
 
   return {
     ...match,
+    pause: null,
     currentTick: tick.current_tick,
     totalTicks: tick.total_ticks ?? match.totalTicks,
     score: tick.score ?? match.score,
@@ -110,11 +114,12 @@ export function applyPlayerDetails(match, freshPlayers) {
   }
 }
 
-// Combina el estado actual con el que devuelve GET /state (se usa al reconectar).
-// Solo lo acepta si es igual o más nuevo que el que ya tenemos.
+// Combina el estado actual con el que devuelve GET /state.
+// Solo lo acepta si su tick es igual o más nuevo que el actual.
 // Tambien reemplaza la pausa: si mientras estuvimos desconectados la pausa terminó,
-// /state trae pause: null y la pantalla deja de mostrarla
-// /state tambien trae la posicion de la pelota y de los jugadores
+// /state trae pause: null y la pantalla deja de mostrarla.
+// Si /state llega tarde y trae una pausa que ya terminó, el siguiente tick nuevo la cierra.
+// /state también trae la posición de la pelota y de los jugadores.
 export function applyFullState(match, freshState) {
   if (match && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
@@ -157,8 +162,8 @@ export function finishPause(match) {
 }
 
 // Descuenta un segundo de la pausa (se llama una vez por segundo mientras dura).
-// Nunca baja de 0: si llega a 0 antes que PAUSE_FINISHED, se queda en 0 esperando
-// ese aviso, porque es el backend el que decide cuándo termina la pausa.
+// Nunca baja de 0: al llegar a 0, mantiene la pausa activa hasta que la cierre un evento,
+// una actualización de estado o un tick más nuevo.
 export function countDownPause(match) {
   if (!match?.pause || match.pause.remainingSeconds <= 0) return match
 

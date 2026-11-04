@@ -12,7 +12,7 @@ const ONE_SECOND_MS = 1000
 //   1. carga el estado inicial (partido + equipos) en paralelo
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
 //   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva
-//   4. si la conexión se corta, avisa y al volver pide el estado de nuevo
+//   4. al abrir la conexión (y al reconectarse) pide el estado de nuevo
 //   5. cuando entra un jugador nuevo a la cancha (sustitución), pide sus datos a /state
 //   6. cuando el partido termina, navega al resultado
 //   7. al salir de la pantalla, cierra la conexión
@@ -121,17 +121,19 @@ export function useMatchLive(matchId) {
       setStatus("connection-error")
     }
 
-    // Al reconectar, pedimos el estado de nuevo para recuperar lo que pasó mientras
-    // estuvimos desconectados (marcador y tick de los ticks perdidos)
+    // Al abrir o restablecer la conexión, pedimos el estado actualizado.
+    // Así recuperamos los cambios que pudieron ocurrir desde la carga inicial
+    // o mientras estuvimos desconectados y no llegaron por el socket.
     function resync() {
       fetchMatchState(matchId)
         .then((freshState) => {
           if (isActive) setMatch((current) => applyFullState(current, freshState))
         })
         .catch((error) => {
-          // Si el pedido falla no pasa nada grave: el próximo tick actualizará todo.
-          // Solo reaccionamos si el backend dice algo definitivo (ej: el partido terminó).
-          if (error instanceof ApiError) handleError(error)
+          // Si el pedido falla por un problema pasajero (sin internet, error 500), se ignora:
+          // el próximo tick actualiza todo. Solo reaccionamos si el back da una respuesta
+          // definitiva (ej: el partido terminó, o ya no participamos).
+          if (error instanceof ApiError && error.status < 500) handleError(error)
         })
     }
 
@@ -163,10 +165,10 @@ export function useMatchLive(matchId) {
         onPauseFinished: () => {
           if (isActive) setMatch((current) => finishPause(current))
         },
-        onConnected: (isReconnection) => {
+        onConnected: () => {
           if (!isActive) return
           setReconnecting(false)
-          if (isReconnection) resync()
+          resync()
         },
         onDisconnected: () => {
           // Solo se muestra el aviso: NO se borra el último estado mostrado
