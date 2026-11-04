@@ -24,7 +24,7 @@ export async function fetchMatchState(matchId) {
     substitutes: data.substitutes ?? [],
     pause: toPause(data),
     // Sirve si se recarga la pantalla durante los penales
-    isPenalties: data.phase === "PENALTIES" || data.score?.phome != null,
+    isPenalties: data.score?.phome != null,
   }
 }
 
