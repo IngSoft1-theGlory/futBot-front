@@ -100,7 +100,6 @@ describe("fetchMatchState - penales", () => {
   it("Debería indicar que el partido está en penales si se recarga durante la tanda", async () => {
     httpService.get.mockResolvedValue({
       ...STATE_RESPONSE,
-      phase: "PENALTIES",
       score: { home: 1, away: 1, phome: 2, paway: 1 },
     })
 
