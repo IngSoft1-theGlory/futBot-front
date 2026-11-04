@@ -63,6 +63,16 @@ describe("fetchMatchState", () => {
     expect(state.substitutes).toEqual([])
   })
 
+  it("Debería devolver la pelota y, de cada jugador, su posición y acción", async () => {
+    const players = [{ player_id: 101, team_id: 1, position: { x: 50, y: 28.5 }, current_action: "idle" }]
+    httpService.get.mockResolvedValue({ ...STATE_RESPONSE, players })
+
+    const state = await fetchMatchState("12")
+
+    expect(state.ball).toEqual({ x: 52.5, y: 34 })
+    expect(state.players).toEqual(players)
+  })
+
   it.each([
     { caso: "el partido está en juego", response: STATE_RESPONSE },
     {

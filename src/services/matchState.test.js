@@ -80,16 +80,27 @@ describe("applyTick", () => {
     expect(baseMatch.score).toEqual({ home: 0, away: 0 })
   })
 
-  it("ignora los ticks mientras el partido está en pausa (marcador, reloj y cancha congelados)", () => {
+  it("Debería ignorar los ticks actuales o viejos mientras el partido está en pausa", () => {
     const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
     const tick = {
-      current_tick: 11,
-      score: { home: 1, away: 0 },
-      ball: { x: 60, y: 31 },
-      players: [{ player_id: 1, position: { x: 12, y: 11 }, current_action: "RUN" }],
+      current_tick: 10,
+      score: { home: 0, away: 0 },
+      ball: { x: 52, y: 30 },
+      players: [{ player_id: 1, position: { x: 10, y: 10 }, current_action: "IDLE" }],
     }
 
     expect(applyTick(pausedMatch, tick)).toBe(pausedMatch)
+  })
+
+  it("Debería cerrar una pausa colgada si llega un tick más nuevo", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "CB", remainingSeconds: 0 } }
+    const tick = { current_tick: 11, score: { home: 1, away: 0 }, ball: { x: 60, y: 31 } }
+
+    const result = applyTick(pausedMatch, tick)
+
+    expect(result.pause).toBeNull()
+    expect(result.currentTick).toBe(11)
+    expect(result.score).toEqual({ home: 1, away: 0 })
   })
 })
 
@@ -110,6 +121,23 @@ describe("applyFullState", () => {
     const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
 
     expect(applyFullState(pausedMatch, { ...baseMatch, pause: null }).pause).toBeNull()
+  })
+
+  it("Debería usar la pelota y la posición de los jugadores que trae /state", () => {
+    const fresh = {
+      currentTick: 10,
+      totalTicks: 600,
+      score: { home: 0, away: 0 },
+      ball: { x: 62, y: 20 },
+      players: [{ player_id: 1, team_id: 1, name: "Ana", position: { x: 15, y: 12 }, current_action: "idle" }],
+      pause: { type: "HALF_TIME", remainingSeconds: 12 },
+    }
+
+    const result = applyFullState(baseMatch, fresh)
+
+    expect(result.ball).toEqual({ x: 62, y: 20 })
+    expect(result.players[0].position).toEqual({ x: 15, y: 12 })
+    expect(result.pause).toEqual({ type: "HALF_TIME", remainingSeconds: 12 })
   })
 })
 
@@ -141,6 +169,22 @@ describe("pausas", () => {
     expect(countDownPause(pauseAtZero)).toBe(pauseAtZero)
     expect(countDownPause(notPaused)).toBe(notPaused)
   })
+
+  it("Debería ignorar una pausa duplicada y conserva el estado actual", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 12 }}
+    const result = startPause(pausedMatch, {
+      type: "HT",
+      duration_seconds: 20,
+      current_tick: 120,
+    })
+
+    expect(result).toBe(pausedMatch)
+  })
+
+  it("Deberia devolver al no haber una pausa el estado del partido", () => {
+    const notPaused = { ...baseMatch, pause: null }
+    expect(finishPause(notPaused)).toBe(notPaused)
+  })  
 })
 
 describe("isMatchOver", () => {
