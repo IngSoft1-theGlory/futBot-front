@@ -10,7 +10,8 @@ import { httpService } from "./createhttpService"
 //   { current_tick, total_ticks, phase, score: { home, away }, ball: { x, y },
 //     players: [{ player_id, team_id, name, number, attributes, behavior_id,
 //                 position: { x, y }, current_action }],
-//     substitutes: [{ player_id, team_id, name, number, attributes, behavior_id }],   <- solo los del propio equipo
+//     substitutes: [{ player_id, team_id, name, number, attributes, behavior_id,
+//                     position: null, current_action: null }],   <- solo los del propio equipo
 //     pause: { type, remaining_seconds } }   <- cuando phase es "PAUSED"
 export async function fetchMatchState(matchId) {
   const data = await httpService.get(`/matches/${matchId}/state`)
