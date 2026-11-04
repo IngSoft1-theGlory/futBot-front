@@ -14,8 +14,16 @@ vi.mock("../services/matches", () => ({
 
 vi.mock("./useGlobalEvent", () => ({ useGlobalEvent: vi.fn() }))
 
+// Se reemplaza navigate para saber si el hook manda al resultado
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }))
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
+  useNavigate: () => mockNavigate,
+}))
+
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams, requestMatchWebsocketUrl } from "../services/matches"
+import { useGlobalEvent } from "./useGlobalEvent"
 import { useMatchLive } from "./useMatchLive"
 
 class FakeWebSocket {
@@ -301,5 +309,45 @@ describe("useMatchLive - usuario que no participa", () => {
     await waitFor(() => expect(result.current.status).toBe("not-participant"))
 
     expect(result.current.match).toBeNull()
+  })
+})
+
+describe("useMatchLive - penales", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubGlobal("WebSocket", FakeWebSocket)
+    FakeWebSocket.lastInstance = null
+    fetchMatchTeams.mockResolvedValue(TEAMS)
+    requestMatchWebsocketUrl.mockResolvedValue("ws://localhost:8000/ws/v1/matches/12?token=t1")
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  const TIED_MATCH = { ...MATCH_IN_PROGRESS, score: { home: 1, away: 1 } }
+
+  it("Debería quedar en penales con PENALTIES_STARTED y salir de la tanda con PENALTIES_FINISHED", async () => {
+    const result = await renderMatchLive(TIED_MATCH)
+
+    serverSends({ event: "PENALTIES_STARTED", match_id: 12 })
+    expect(result.current.match.isPenalties).toBe(true)
+
+    serverSends({ event: "PENALTIES_FINISHED", match_id: 12 })
+    expect(result.current.match.isPenalties).toBe(false)
+  })
+
+  it("Debería seguir en la pantalla si el tiempo reglamentario termina empatado, hasta que llegue MATCH_FINISHED", async () => {
+    await renderMatchLive(TIED_MATCH)
+
+    serverSends({ ...NEXT_TICK, current_tick: 1200, score: { home: 1, away: 1, phome: null, paway: null } })
+    expect(mockNavigate).not.toHaveBeenCalled()
+
+    const onMatchFinished = useGlobalEvent.mock.calls.findLast(([event]) => event === "MATCH_FINISHED")[1]
+    act(() => onMatchFinished({ match_id: 12 }))
+    expect(mockNavigate).toHaveBeenCalledWith("/matches/12/result", { replace: true })
   })
 })

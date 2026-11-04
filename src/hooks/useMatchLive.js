@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
 import { openMatchSocket } from "../services/matchSockets"
-import { applyTick, applyFullState, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, isMatchOver, startPause, finishPause, countDownPause, MATCH_FINISHED } from "../services/matchState"
+import { applyTick, applyFullState, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, isMatchOver, mightGoToPenalties, startPause, finishPause, countDownPause, startPenalties, finishPenalties, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
 
 const ONE_SECOND_MS = 1000
@@ -11,7 +11,8 @@ const ONE_SECOND_MS = 1000
 // Este hook hace TODO el trabajo "invisible" de la pantalla del partido:
 //   1. carga el estado inicial (partido + equipos) en paralelo
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
-//   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva
+//   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva,
+//      y también los penales (PENALTIES_STARTED / PENALTIES_FINISHED)
 //   4. al abrir la conexión (y al reconectarse) pide el estado de nuevo
 //   5. cuando entra un jugador nuevo a la cancha (sustitución), pide sus datos a /state
 //   6. cuando el partido termina, navega al resultado
@@ -43,8 +44,8 @@ export function useMatchLive(matchId) {
     if (data?.match_id === Number(matchId)) navigate(resultPath, { replace: true })
   })
 
-  // Fin del partido, forma 2: el tick actual alcanzó el total de ticks
-  const isOver = match ? isMatchOver(match) : false
+  // Fin del partido, forma 2: el tick actual alcanzó el total de ticks (con empate se espera la forma 1)
+  const isOver = match ? isMatchOver(match) && !mightGoToPenalties(match) : false
   useEffect(() => {
     if (isOver) navigate(resultPath, { replace: true })
   }, [isOver, resultPath])
@@ -164,6 +165,12 @@ export function useMatchLive(matchId) {
         },
         onPauseFinished: () => {
           if (isActive) setMatch((current) => finishPause(current))
+        },
+        onPenaltiesStarted: () => {
+          if (isActive) setMatch((current) => startPenalties(current))
+        },
+        onPenaltiesFinished: () => {
+          if (isActive) setMatch((current) => finishPenalties(current))
         },
         onConnected: () => {
           if (!isActive) return

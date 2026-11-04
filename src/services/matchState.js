@@ -13,6 +13,11 @@ export function isMatchOver(match) {
   return match.totalTicks > 0 && match.currentTick >= match.totalTicks
 }
 
+// Con empate puede haber penales, así que el último tick no alcanza para dar el partido por terminado
+export function mightGoToPenalties(match) {
+  return match.score?.home === match.score?.away
+}
+
 // Combina el estado actual del partido con un TICK_UPDATE.
 //
 // - Del tick se actualiza: tick, total, marcador, pelota, y posición + acción de cada jugador.
@@ -33,8 +38,9 @@ export function applyTick(match, tick) {
   // Se ignoran los ticks actuales o viejos y, si hay uno nuevo, se reanuda el partido.
   if (match.pause && tick.current_tick <= match.currentTick) return match
 
-  // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo
-  if (tick.current_tick < match.currentTick) return match
+  // Un tick viejo (por ejemplo, llegó tarde) nunca debe pisar uno más nuevo.
+  // En penales no se compara porque el back puede repetir el número de tick
+  if (!match.isPenalties && tick.current_tick < match.currentTick) return match
 
   return {
     ...match,
@@ -121,7 +127,9 @@ export function applyPlayerDetails(match, freshPlayers) {
 // Si /state llega tarde y trae una pausa que ya terminó, el siguiente tick nuevo la cierra.
 // /state también trae la posición de la pelota y de los jugadores.
 export function applyFullState(match, freshState) {
-  if (match && freshState.currentTick < match.currentTick) return match
+  // En penales no se compara el tick (igual que en applyTick)
+  const isPenalties = match?.isPenalties || freshState.isPenalties
+  if (match && !isPenalties && freshState.currentTick < match.currentTick) return match
   return { ...match, ...freshState }
 }
 
@@ -171,4 +179,17 @@ export function countDownPause(match) {
     ...match,
     pause: { ...match.pause, remainingSeconds: match.pause.remainingSeconds - 1 },
   }
+}
+
+// ---------- Penales ----------
+// Mientras se patea la tanda, match.isPenalties es true. Los goles van en score.phome y score.paway
+
+// Empiezan los penales (evento PENALTIES_STARTED)
+export function startPenalties(match) {
+  return { ...match, isPenalties: true }
+}
+
+// Terminan los penales (evento PENALTIES_FINISHED)
+export function finishPenalties(match) {
+  return { ...match, isPenalties: false }
 }
