@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import ActionCard from "../../components/ActionCard/ActionCard"
+import RankingPreview from "../../components/RankingPreview/RankingPreview"
 import { useSession } from "../../hooks/useSession"
 import "./HomePage.css"
 
@@ -138,6 +139,13 @@ function HomePage() {
               <Button onClick={() => navigate("/behaviors")}>Ver comportamientos</Button>
             </ActionCard>
           </div>
+        </section>
+
+        <section className="home-section" aria-labelledby="competition-title">
+          <h2 id="competition-title" className="home-section__title">
+            Competencia
+          </h2>
+          <RankingPreview icon={<TrophyIcon />} teamId={user?.team_id} onSeeAll={() => navigate("/ranking")} />
         </section>
       </main>
     </div>

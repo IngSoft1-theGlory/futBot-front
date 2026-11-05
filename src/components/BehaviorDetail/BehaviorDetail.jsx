@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { httpService, ApiError } from "../../services/createhttpService"
+import Button from "../Button/Button"
 import "./BehaviorDetail.css"
 
 // elige que mensaje mostrar segun el error que devolvio el backend
-function getBehaviorErrorMessage(err) {
+function getErrorMessage(err) {
   if (err instanceof ApiError) {
     if (err.status === 403) return "No tenés permiso para ver este comportamiento."
     if (err.status === 404) return "El comportamiento no existe o fue eliminado."
@@ -12,12 +13,13 @@ function getBehaviorErrorMessage(err) {
   return "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
 }
 /*
- Panel de solo lctura con el detalle de un comportamiento
+ Panel de lectura con el detalle de un comportamientoy un botón para editar
  Props:
    behaviorId: id del comportamiento que se eligio en la coleccion
    onBack:     función para volver a la colección
+   onEdit:     función callback que se ejecuta al hacer clic en "Editar"
 */
-function BehaviorDetail({ behaviorId, onBack }) {
+function BehaviorDetail({ behaviorId, onBack, onEdit }) {
   const [behavior, setBehavior] = useState(null)    // El comportamiento que devuelve el backend
   const [error, setError] = useState("")            // Mensaje de error para mostrar
   const [status, setStatus] = useState("loading")   // Estado del panel: "loading", "success" o "error"
@@ -38,7 +40,7 @@ function BehaviorDetail({ behaviorId, onBack }) {
         // 401: la sesión vencio,el servicio HTTP ya la cerro, asi que la app, redirige sola a /login y ahi avisa que la sesion expir
         if (err instanceof ApiError && err.status === 401) return
 
-        setError(getBehaviorErrorMessage(err))   // Setea el mensaje de error llamando a la función
+        setError(getErrorMessage(err))   // Setea el mensaje de error llamando a la función
         setStatus("error")
       })
 
@@ -49,9 +51,15 @@ function BehaviorDetail({ behaviorId, onBack }) {
 
   return (
     <section className="behavior-detail">
-      <button type="button" className="behavior-detail__back" onClick={onBack}>
-        Volver a la colección
-      </button>
+      <div className="behavior-detail__toolbar">
+        <button type="button" className="behavior-detail__back" onClick={onBack}>
+           Volver a la colección
+        </button>
+
+        {status === "success" && !behavior.is_default && (
+          <Button onClick={onEdit}>Editar</Button>
+        )}
+      </div>
 
       {status === "loading" && (
         <p className="behavior-detail__message" role="status">
@@ -73,10 +81,10 @@ function BehaviorDetail({ behaviorId, onBack }) {
             {behavior.is_default && <span className="behavior-detail__badge">Por default</span>}
           </div>
 
-          <h3 className="behavior-detail__subtitle">Descripción</h3>
+          <h3 className="behavior-detail__subtitle">Descripción:</h3>
           <p className="behavior-detail__description">{behavior.description}</p>
 
-          <h3 className="behavior-detail__subtitle">Código</h3>
+          <h3 className="behavior-detail__subtitle">Código:</h3>
           {/* <pre> muestra el texto tal cual (respeta espacios y saltos de línea) y no se puede editar */}
           <pre className="behavior-detail__code">{behavior.code}</pre>
         </div>

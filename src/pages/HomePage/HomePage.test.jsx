@@ -11,6 +11,10 @@ vi.mock("../../hooks/useSession", () => ({
   useSession: () => ({ user: mockUser, logout: mockLogout }),
 }))
 
+vi.mock("../../services/rankings", () => ({
+  fetchGlobalRanking: vi.fn(() => Promise.resolve({ ranking: [], hasNextPage: false })),
+}))
+
 import HomePage from "./HomePage"
 
 // Rutas a las que redirige cada botón de la home
@@ -21,6 +25,7 @@ const DESTINOS = [
   { boton: "Unirse a un amistoso", ruta: "/friendlies" },
   { boton: "Crear jugador", ruta: "/players/createplayer" },
   { boton: "Ver comportamientos", ruta: "/behaviors" },
+  { boton: "Ver ranking completo", ruta: "/ranking" },
 ]
 
 function renderPage() {
@@ -81,6 +86,13 @@ describe("HomePage", () => {
       for (const titulo of ["Ligas", "Amistosos", "Jugadores", "Comportamientos"]) {
         expect(screen.getByRole("heading", { name: titulo })).toBeTruthy()
       }
+    })
+
+    it("Debería mostrar la sección Competencia con el acceso al ranking global", () => {
+      renderPage()
+
+      expect(screen.getByRole("heading", { name: "Competencia" })).toBeTruthy()
+      expect(boton("Ver ranking completo")).toBeTruthy()
     })
 
     it("No debería listar comportamientos, solo mostrar el acceso a su pantalla", () => {

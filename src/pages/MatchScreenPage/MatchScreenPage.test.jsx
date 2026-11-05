@@ -7,9 +7,10 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 // MatchScreenPage casi no tiene lógica: el hook consigue los datos y los componentes los dibujan.
 // Se mockean el hook y los hijos, y se testea qué muestra la pantalla y qué props les pasa.
 
-const { mockMatchHeader, mockMatchField } = vi.hoisted(() => ({
+const { mockMatchHeader, mockMatchField, mockPauseMenu } = vi.hoisted(() => ({
   mockMatchHeader: vi.fn(),
   mockMatchField: vi.fn(),
+  mockPauseMenu: vi.fn(),
 }))
 
 vi.mock("../../hooks/useMatchLive", () => ({ useMatchLive: vi.fn() }))
@@ -52,6 +53,13 @@ vi.mock("../../components/PlayerPanel/PlayerPanel", () => ({
       <button onClick={onClose}>Cerrar panel</button>
     </aside>
   ),
+}))
+
+vi.mock("../../components/PauseMenu/PauseMenu", () => ({
+  default: (props) => {
+    mockPauseMenu(props)
+    return <section data-testid="pause-menu" />
+  },
 }))
 
 import { useMatchLive } from "../../hooks/useMatchLive"
@@ -117,6 +125,7 @@ describe("MatchScreenPage", () => {
     useMatchLive.mockReset()
     mockMatchHeader.mockClear()
     mockMatchField.mockClear()
+    mockPauseMenu.mockClear()
     mockHook()
   })
 
@@ -263,24 +272,51 @@ describe("MatchScreenPage", () => {
   })
 
   describe("Pausas", () => {
-    it("Debería mostrar el tipo de pausa y los segundos restantes, sin dejar de mostrar el marcador ni la cancha", () => {
-      mockHook({ match: { ...MATCH, pause: { type: "HT", remainingSeconds: 25 } } })
+    it("Debería no mostrar el menú de pausa cuando el partido está en juego", () => {
+      mockHook({ match: { ...MATCH, pause: null } })
       render(pagina())
 
-      expect(screen.getByText("Pausa: HT · Quedan 25 s")).toBeTruthy()
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
+    })
+
+    it("Debería mostrar el menú con los datos de la pausa, sin dejar de mostrar el marcador ni la cancha", () => {
+      const substitutePlayer = vi.fn()
+      const updatePlayerBehavior = vi.fn()
+      const pause = { type: "HALF_TIME", remainingSeconds: 25 }
+      const substitutes = [{ player_id: 105, team_id: 1, name: "Nico González", number: 15 }]
+      mockHook({ match: { ...MATCH, pause, substitutes }, substitutePlayer, updatePlayerBehavior })
+      render(pagina("42"))
+
+      expect(ultimasProps(mockPauseMenu)).toEqual({
+        matchId: 42,
+        teamId: 1,
+        pause,
+        players: MATCH.players,
+        substitutes,
+        onSubstituted: substitutePlayer,
+        onBehaviorChanged: updatePlayerBehavior,
+      })
       expect(ultimasProps(mockMatchHeader).score).toEqual(MATCH.score)
       expect(screen.getByTestId("match-field")).toBeTruthy()
     })
 
-    it("Debería actualizar la cuenta regresiva y sacar el aviso cuando termina la pausa", () => {
-      mockHook({ match: { ...MATCH, pause: { type: "HT", remainingSeconds: 25 } } })
+    it("Debería actualizar la cuenta regresiva y ocultar el menú cuando se reanuda el partido", () => {
+      mockHook({ match: { ...MATCH, pause: { type: "HALF_TIME", remainingSeconds: 25 } } })
       const resultado = render(pagina())
 
-      actualizarHook(resultado, { match: { ...MATCH, pause: { type: "HT", remainingSeconds: 24 } } })
-      expect(screen.getByText("Pausa: HT · Quedan 24 s")).toBeTruthy()
+      actualizarHook(resultado, { match: { ...MATCH, pause: { type: "HALF_TIME", remainingSeconds: 24 } } })
+      expect(ultimasProps(mockPauseMenu).pause.remainingSeconds).toBe(24)
 
       actualizarHook(resultado, { match: { ...MATCH, pause: null } })
-      expect(screen.queryByText(/Pausa/)).toBeNull()
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
+    })
+
+    it("Debería mostrar el error y no el menú si el usuario no participa en el partido", () => {
+      mockHook({ status: "not-participant", match: null, teams: null })
+      render(pagina())
+
+      expect(screen.getByRole("alert").textContent).toBe("No participás en este partido.")
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
     })
   })
 })

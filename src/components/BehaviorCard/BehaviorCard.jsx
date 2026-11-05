@@ -9,6 +9,7 @@ function BehaviorCard({ behavior, onSelect }) {
       onClick={() => onSelect(behavior.behavior_id)}
     >
       <span className="behavior-card__name">{behavior.name}</span>
+      {behavior.is_default && <span className="behavior-card__badge">Por default</span>}
       <span className="behavior-card__description" title={behavior.description}>
         {behavior.description}
       </span>

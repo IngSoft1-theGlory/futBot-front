@@ -6,6 +6,7 @@ import MatchHeader from "../../components/MatchHeader/MatchHeader"
 import Pitch from "../../components/Pitch/Pitch"
 import MatchField from "../../components/MatchField/MatchField"
 import PlayerPanel from "../../components/PlayerPanel/PlayerPanel"
+import PauseMenu from "../../components/PauseMenu/PauseMenu"
 import Button from "../../components/Button/Button"
 import "./MatchScreenPage.css"
 
@@ -18,7 +19,7 @@ const CONNECTION_ERROR_MESSAGE = "Error al no poder iniciar el partido por falla
 // Lo único que maneja acá es qué jugador está seleccionado.
 function MatchPage() {
   const { matchId } = useParams()
-  const { status, match, teams, reconnecting, retry, updatePlayerBehavior } = useMatchLive(matchId)
+  const { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer } = useMatchLive(matchId)
   const { user } = useSession()
 
   // Guardamos solo el ID del jugador seleccionado (no el jugador entero),
@@ -79,12 +80,18 @@ function MatchPage() {
         </p>
       )}
 
-      {/* Aviso de pausa: qué tipo de pausa es y cuántos segundos faltan para que termine.
-          Mientras dura, el marcador, el reloj y la cancha quedan congelados (ver useMatchLive) */}
+      {/* Menú de pausa: solo existe mientras dura la pausa. Mientras tanto, el marcador,
+          el reloj y la cancha quedan congelados (ver useMatchLive) */}
       {match.pause && (
-        <p className="match-page__pause">
-          Pausa: {match.pause.type} · Quedan {match.pause.remainingSeconds} s
-        </p>
+        <PauseMenu
+          matchId={Number(matchId)}
+          teamId={user?.team_id}
+          pause={match.pause}
+          players={match.players}
+          substitutes={match.substitutes}
+          onSubstituted={substitutePlayer}
+          onBehaviorChanged={updatePlayerBehavior}
+        />
       )}
 
       <MatchHeader

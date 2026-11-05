@@ -1,0 +1,184 @@
+/* Panel del formulario */
+.behavior-form {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: left; 
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.75rem;
+}
+
+.behavior-form__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* Botón "Volver" de la pantalla de error de carga */
+.behavior-form__back {
+  align-self: flex-start;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #818cf8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.behavior-form__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+.behavior-form__back:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.behavior-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.60rem;
+}
+
+.behavior-form__field label {
+  margin-top: 0.7rem;
+  margin-left: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.behavior-form__field input,
+.behavior-form__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  color: #e2e8f0;
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.5rem;
+}
+
+.behavior-form__field textarea {
+  resize: none;
+}
+
+.behavior-form__field input:focus-visible,
+.behavior-form__field textarea:focus-visible {
+  border-color: #818cf8;
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+/* Contenedor del editor de código (CodeMirror) */
+.behavior-form__code {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Mismo fondo que los demás campos */
+.behavior-form__code .cm-editor,
+.behavior-form__code .cm-gutters {
+  background: #020617;
+}
+
+/* Foco: igual que en los otros campos, el resaltado va en todo el contenedor */
+.behavior-form__code:focus-within {
+  border-color: #818cf8;
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+/* CodeMirror dibuja su propio contorno al enfocarse: se saca para no duplicarlo */
+.behavior-form__code .cm-editor.cm-focused {
+  outline: none;
+}
+
+.behavior-form__code--error,
+.behavior-form__code--error:focus-within {
+  border-color: #ef4444;
+}
+
+.behavior-form__code--error:focus-within {
+  outline-color: #ef4444;
+}
+
+.behavior-form__code--error .cm-editor.cm-focused {
+  outline-color: #ef4444;
+}
+
+/* Texto de ayuda con las reglas del código */
+.behavior-form__hint {
+  margin: auto;
+  margin-bottom: 1.5rem;
+  font-size: 0.90rem;
+  color: #94a3b8;
+}
+
+/* Error de validación debajo de cada campo */
+.behavior-form__error {
+  margin: auto;
+  margin-top: 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #fca5a5;
+}
+
+/* Mensajes generales (cargando, error de carga, error al enviar) */
+.behavior-form__message {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.behavior-form__message--error {
+  margin-bottom: 1.2rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+}
+
+.behavior-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.behavior-form__counter {
+  margin: 0;
+  font-size: 1rem;
+  text-align: right;
+  color: #94a3b8;
+}
+
+.behavior-form__counter--over {
+  color: #fca5a5;
+}
+
+.behavior-form__field input.behavior-form__input--error,
+.behavior-form__field textarea.behavior-form__input--error {
+  border-color: #ef4444;
+}
+
+.behavior-form__field input.behavior-form__input--error:focus-visible,
+.behavior-form__field textarea.behavior-form__input--error:focus-visible {
+  outline-color: #ef4444;
+}

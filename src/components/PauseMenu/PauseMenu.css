@@ -1,0 +1,100 @@
+.pause-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 12px;
+  text-align: left;
+  background: #111a33;
+}
+
+.pause-menu__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pause-menu__title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.pause-menu__countdown {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #1e40af;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums; /* dígitos del mismo ancho: la cuenta regresiva no "baila" */
+}
+
+/* Las dos acciones lado a lado, y una abajo de la otra si no entran */
+.pause-menu__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 12px;
+}
+
+.pause-menu__action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pause-menu__action-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1rem;
+}
+
+.pause-menu__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pause-menu__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pause-menu__select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+}
+
+.pause-menu__select:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+.pause-menu__success,
+.pause-menu__error {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.pause-menu__success {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.pause-menu__error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
