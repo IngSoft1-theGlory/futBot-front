@@ -114,6 +114,24 @@ describe("HomePage", () => {
     })
   })
 
+  describe("Perfil", () => {
+    it("Debería ir al perfil al tocar el nombre de usuario de la barra superior", async () => {
+      const user = userEvent.setup()
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/profile" element={<h1>Mi perfil</h1>} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+      await user.click(screen.getByRole("link", { name: /Maradona10/ }))
+
+      expect(screen.getByRole("heading", { name: "Mi perfil" })).toBeTruthy()
+    })
+  })
+
   describe("Cerrar sesión", () => {
     it("Debería llamar a logout al presionar Cerrar sesión", async () => {
       mockLogout.mockResolvedValue()
