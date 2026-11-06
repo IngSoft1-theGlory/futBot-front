@@ -124,6 +124,19 @@ describe("CreateLeaguePage", () => {
       expect(isStep1Visible()).toBe(false)
       expect(httpService.post).not.toHaveBeenCalled()
     })
+
+    it("Debería mostrarse la opción de penales elegida marcada y la otra desmarcada", async () => {
+      const user = userEvent.setup()
+      renderPage()
+
+      expect(radio(/^Clásica/).getAttribute("aria-checked")).toBe("true")
+      expect(radio(/^Con penales/).getAttribute("aria-checked")).toBe("false")
+
+      await user.click(radio(/^Con penales/))
+      expect(radio(/^Con penales/).getAttribute("aria-checked")).toBe("true")
+      expect(radio(/^Clásica/).getAttribute("aria-checked")).toBe("false")
+
+    })
   })
 
   describe("Navegación", () => {
@@ -165,6 +178,7 @@ describe("CreateLeaguePage", () => {
         max_teams: 8,
         password: null,
         team_id: 7,
+        penalties_enabled: false,
         ...TACTICAL_CONFIG,
       })
       expect(button("Crear liga").disabled).toBe(true)
@@ -191,6 +205,18 @@ describe("CreateLeaguePage", () => {
 
       expect(screen.getByRole("status").textContent).toMatch(/Liga creada/)
       expect(await screen.findByText("Sala de espera", {}, { timeout: 3000 })).toBeTruthy()
+    })
+
+    it("Debería enviar la opción elegida 'Con penales'", async () => {
+      httpService.post.mockReturnValue(new Promise(() => {}))
+      const user = userEvent.setup()
+      renderPage()
+
+      await user.click(radio(/^Con penales/))
+      await completeStep1(user)
+      await user.click(button("Crear liga"))
+
+      expect(httpService.post.mock.calls[0][1].penalties_enabled).toBe(true)
     })
   })
 
