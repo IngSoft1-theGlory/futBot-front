@@ -23,6 +23,11 @@ const LEAGUE_TYPES = [
   { value: LEAGUE_TYPE_PRIVATE, title: "Privada", description: "Solo con contraseña" },
 ]
 
+const LEAGUE_PENALTIES = [
+  { value: false, title: "Clásica", description: "Hay empates" },
+  { value: true, title: "Con penales", description: "No hay empates" },
+]
+
 // Se reutilizan los mismos valores que Crear Amistoso, para que la duración de los partidos sea consistente
 const DURATION_OPTIONS = MATCH_DURATIONS.map((option) => ({
   value: option.minutes,
@@ -71,6 +76,7 @@ const EMPTY_LEAGUE_DATA = {
   maxTeams: null,
   leagueType: LEAGUE_TYPE_PUBLIC,
   password: "",
+  penaltiesEnabled: false,
 }
 
 function validateLeagueData(data) {
@@ -190,6 +196,7 @@ function CreateLeaguePage() {
       max_teams: leagueData.maxTeams,
       password: isPrivate ? leagueData.password : null,
       team_id: user?.team_id,
+      penalties_enabled: leagueData.penaltiesEnabled,
       ...tacticalConfig,
     })
   }
@@ -365,6 +372,15 @@ function CreateLeaguePage() {
                 autoComplete="new-password"
               />
             )}
+
+            <ChoiceGroup
+              label="Definición de empates"
+              options={LEAGUE_PENALTIES}
+              value={leagueData.penaltiesEnabled}
+              onChange={(penalties) => updateField("penaltiesEnabled", penalties)}
+              error=""
+              errorId="league-penalties-error"
+            />
 
             <div className="duration-card__actions">
               <Button variant="secondary" onClick={handleCancel}>
