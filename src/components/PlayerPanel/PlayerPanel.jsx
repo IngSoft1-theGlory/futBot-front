@@ -11,7 +11,8 @@ const ATTRIBUTES = [
   { key: "strength", label: "Fuerza" },
 ]
 
-function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, onBehaviorChanged }) {
+// En penales el back asigna arquero o pateador, así que no se puede cambiar el comportamiento
+function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, isPenalties = false, onBehaviorChanged }) {
   const [behavior, setBehavior] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -82,7 +83,12 @@ function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, onBe
         <h3 className="player-panel__section-title">Comportamiento</h3>
         {renderBehavior()}
         {/* Solo para jugadores propios. El key reinicia el selector al elegir otro jugador */}
-        {canChangeBehavior && (
+        {canChangeBehavior && isPenalties && (
+          <p className="player-panel__notice" role="status">
+            No se pueden hacer cambios durante los penales
+          </p>
+        )}
+        {canChangeBehavior && !isPenalties && (
           <BehaviorSelector
             key={player.player_id}
             matchId={matchId}

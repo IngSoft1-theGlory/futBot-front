@@ -144,6 +144,8 @@ describe("MatchScreenPage", () => {
         score: MATCH.score,
         currentTick: 450,
         totalTicks: 1200,
+        penalties: null,
+        isPenalties: false,
       })
       expect(within(screen.getByTestId("pitch")).getByTestId("match-field")).toBeTruthy()
       expect(ultimasProps(mockMatchField)).toMatchObject({

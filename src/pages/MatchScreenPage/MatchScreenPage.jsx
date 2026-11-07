@@ -71,6 +71,10 @@ function MatchPage() {
   // Buscamos el jugador seleccionado entre los del partido (null si no hay ninguno)
   const selectedPlayer = match.players.find((player) => player.player_id === selectedPlayerId) ?? null
 
+  // phome y paway vienen en null si no hubo penales
+  const penalties = match.score?.phome != null ? { home: match.score.phome, away: match.score.paway } : null
+  const isPenalties = Boolean(match.isPenalties)
+
   return (
     <main className="match-page">
       {/* Aviso de corte: se muestra ARRIBA de la pantalla, sin borrar lo que ya se veía */}
@@ -100,10 +104,12 @@ function MatchPage() {
         score={match.score}
         currentTick={match.currentTick}
         totalTicks={match.totalTicks}
+        penalties={penalties}
+        isPenalties={isPenalties}
       />
 
       <div className="match-page__content">
-        <Pitch>
+        <Pitch isPenalties={isPenalties}>
           <MatchField
             players={match.players}
             ball={match.ball}
@@ -120,6 +126,7 @@ function MatchPage() {
             onClose={() => setSelectedPlayerId(null)}
             matchId={Number(matchId)}
             canChangeBehavior={selectedPlayer.team_id === user?.team_id}
+            isPenalties={isPenalties}
             onBehaviorChanged={(behaviorId) => updatePlayerBehavior(selectedPlayer.player_id, behaviorId)}
           />
         )}

@@ -49,3 +49,24 @@
   font-size: 1.1rem;       /* más chico que el marcador */
   font-variant-numeric: tabular-nums; /* dígitos del mismo ancho: el reloj no "baila" */
 }
+
+/* Goles de penales */
+.match-header__penalties {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #818cf8;
+  vertical-align: middle;
+}
+
+/* Cartel "En Penales" */
+.match-header__clock--penalties {
+  padding: 2px 12px;
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.15);
+  color: #c7d2fe;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

@@ -85,6 +85,14 @@ describe("PlayerPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it("Debería avisar que no se pueden hacer cambios durante los penales, en lugar de ofrecer el cambio", async () => {
+    render(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canChangeBehavior isPenalties />)
+    await screen.findByText("Defensivo")
+
+    expect(screen.getByText("No se pueden hacer cambios durante los penales")).toBeTruthy()
+    expect(screen.getAllByRole("button").length).toBe(1) // solo el de cerrar
+  })
+
   it("Debería no ofrecer acciones de edición", async () => {
     httpService.get.mockResolvedValue({ name: "Defensivo" })
     const { container } = render(<PlayerPanel player={ownPlayer} onClose={() => {}} />)
