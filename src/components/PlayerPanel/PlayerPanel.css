@@ -61,7 +61,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.player-panel__behavior {
+.player-panel__behavior,
+.player-panel__substitution {
   display: flex;
   flex-direction: column;
   gap: 4px;
