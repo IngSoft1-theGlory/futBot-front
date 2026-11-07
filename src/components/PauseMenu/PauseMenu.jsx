@@ -3,6 +3,7 @@ import Button from "../Button/Button"
 import BehaviorSelector from "../BehaviorSelector/BehaviorSelector"
 import { ApiError } from "../../services/createhttpService"
 import { requestSubstitution } from "../../services/matches"
+import { getSubstitutionErrorMessage } from "../../services/substitutionErrors"
 import "./PauseMenu.css"
 
 // Nombre que ve el usuario para cada tipo de pausa que manda el backend
@@ -12,20 +13,6 @@ const PAUSE_NAMES = {
 }
 
 const SUCCESS_MESSAGE = "Listo: la sustitución ya se ve en la cancha."
-const NETWORK_ERROR_MESSAGE =
-  "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
-
-// unico lugar donde se traduce cada codigo de error de la sustitución, Si el código no está, se usa el message que manda el backend
-const ERROR_MESSAGES = {
-  SUBSTITUTION_LIMIT_EXCEEDED: "Ya hiciste un cambio en esta pausa.",
-  INVALID_PLAYER_SELECTION: "Elegí un titular que esté en cancha y un suplente de tu equipo.",
-  UNAUTHORIZED_ACTION: "No participás en este partido.",
-}
-
-function getErrorMessage(error) {
-  if (!(error instanceof ApiError)) return NETWORK_ERROR_MESSAGE
-  return ERROR_MESSAGES[error.error] ?? error.message
-}
 
 function isSessionError(error) {
   return error instanceof ApiError && error.status === 401
@@ -91,7 +78,7 @@ function PauseMenu({ matchId, teamId, pause, players, substitutes, onSubstituted
       setPlayerInId("")
     } catch (err) {
       // Ante un error la cancha no se toca: los jugadores siguen como estaban
-      if (!isSessionError(err)) setError(getErrorMessage(err))
+      if (!isSessionError(err)) setError(getSubstitutionErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
