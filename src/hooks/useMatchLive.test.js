@@ -285,13 +285,48 @@ describe("useMatchLive - sustituciones", () => {
     const substitute = { player_id: 105, team_id: 1, name: "Nico González", number: 11 }
     const result = await renderMatchLive({ ...MATCH_IN_PROGRESS, substitutes: [substitute] })
     serverSends(PAUSE_STARTED)
+    await flush() // termina el pedido de la alineación que se hace al empezar la pausa
+    const pedidosAntes = fetchMatchState.mock.calls.length
 
     act(() => result.current.substitutePlayer(101, 105))
     await flush()
 
     expect(result.current.match.players[0]).toMatchObject({ name: "Nico González", position: { x: 50, y: 30 } })
     expect(result.current.match.substitutes.map((player) => player.player_id)).toEqual([101])
-    expect(fetchMatchState).toHaveBeenCalledTimes(1)
+    expect(fetchMatchState).toHaveBeenCalledTimes(pedidosAntes)
+  })
+
+  it("Debería guardar el cambio planificado y reemplazarlo si se planifica otro", async () => {
+    const result = await renderMatchLive(MATCH_IN_PROGRESS)
+
+    act(() => result.current.planSubstitution(101, 105))
+    expect(result.current.match.plannedSubstitution).toEqual({ playerOutId: 101, playerInId: 105 })
+
+    act(() => result.current.planSubstitution(101, 106))
+    expect(result.current.match.plannedSubstitution).toEqual({ playerOutId: 101, playerInId: 106 })
+  })
+
+  it("Debería mostrar la alineación con el cambio planificado ya aplicado al empezar la pausa", async () => {
+    const titular = MATCH_IN_PROGRESS.players[0]
+    const suplente = { player_id: 105, team_id: 1, name: "Nico González", number: 11 }
+    const result = await renderMatchLive({ ...MATCH_IN_PROGRESS, substitutes: [suplente] })
+    act(() => result.current.planSubstitution(101, 105))
+
+    // /state ya trae el cambio que el back aplicó al empezar la pausa
+    fetchMatchState.mockResolvedValue({
+      ...MATCH_IN_PROGRESS,
+      players: [{ ...suplente, position: { x: 50, y: 30 } }],
+      substitutes: [{ ...titular, position: null }],
+      plannedSubstitution: null,
+      pause: { type: "HT", remainingSeconds: 30 },
+    })
+    serverSends(PAUSE_STARTED)
+    await flush()
+
+    expect(result.current.match.players.map((player) => player.player_id)).toEqual([105])
+    expect(result.current.match.substitutes.map((player) => player.player_id)).toEqual([101])
+    expect(result.current.match.plannedSubstitution).toBeNull()
+    expect(result.current.match.pause).toEqual({ type: "HT", remainingSeconds: 30 })
   })
 })
 
