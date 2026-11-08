@@ -3,7 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
-vi.mock("../../services/behaviors", () => ({ fetchBehaviors: vi.fn() }))
+// Se simula solo el pedido al back: el filtro por tipo es el real
+vi.mock("../../services/behaviors", async (importOriginal) => ({
+  ...(await importOriginal()),
+  fetchBehaviors: vi.fn(),
+}))
 vi.mock("../../services/matches", () => ({ changePlayerBehavior: vi.fn(), requestSubstitution: vi.fn() }))
 
 import { ApiError } from "../../services/createhttpService"
@@ -17,8 +21,8 @@ const RONALDO = { player_id: 205, team_id: 2, name: "Ronaldo", number: 7, behavi
 const GONZALEZ = { player_id: 105, team_id: 1, name: "Nico González", number: 15, behavior_id: 3 }
 
 const BEHAVIORS = [
-  { behavior_id: 3, name: "Defensivo", is_default: true },
-  { behavior_id: 8, name: "Mi delantero", is_default: false },
+  { behavior_id: 3, name: "Defensivo", is_default: true, behavior_type: "PLAYER" },
+  { behavior_id: 8, name: "Mi delantero", is_default: false, behavior_type: "PLAYER" },
 ]
 
 const HALF_TIME = { type: "HALF_TIME", remainingSeconds: 20 }

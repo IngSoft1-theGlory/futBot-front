@@ -3,7 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
-vi.mock("../../services/behaviors", () => ({ fetchBehaviors: vi.fn() }))
+// Se simula solo el pedido al back, el filtro por tipo es el real
+vi.mock("../../services/behaviors", async (importOriginal) => ({
+  ...(await importOriginal()),
+  fetchBehaviors: vi.fn(),
+}))
 vi.mock("../../services/matches", () => ({ changePlayerBehavior: vi.fn() }))
 
 import { ApiError } from "../../services/createhttpService"
@@ -12,8 +16,8 @@ import { changePlayerBehavior } from "../../services/matches"
 import BehaviorSelector from "./BehaviorSelector"
 
 const COMPORTAMIENTOS = [
-  { behavior_id: 1, name: "Defensivo", is_default: true },
-  { behavior_id: 8, name: "Mi delantero", is_default: false },
+  { behavior_id: 1, name: "Defensivo", is_default: true, behavior_type: "PLAYER" },
+  { behavior_id: 8, name: "Mi delantero", is_default: false, behavior_type: "PLAYER" },
 ]
 
 const button = (name) => screen.getByRole("button", { name })
@@ -51,6 +55,22 @@ describe("BehaviorSelector", () => {
     await user.click(button("Cambiar comportamiento"))
 
     expect(fetchBehaviors).toHaveBeenCalledTimes(2)
+  })
+
+  it("Debería mostrar solo los comportamientos de jugador cuando la lista mezcla PLAYER y COACH", async () => {
+    fetchBehaviors.mockResolvedValue([
+      ...COMPORTAMIENTOS,
+      { behavior_id: 20, name: "DT ofensivo", is_default: true, behavior_type: "COACH" },
+      { behavior_id: 21, name: "Mi DT", is_default: false, behavior_type: "COACH" },
+    ])
+    const user = userEvent.setup()
+    renderSelector()
+
+    await user.click(button("Cambiar comportamiento"))
+    await screen.findByRole("combobox")
+
+    const optionNames = screen.getAllByRole("option").map((option) => option.textContent)
+    expect(optionNames).toEqual(["Elegí un comportamiento", "Defensivo · predeterminado (actual)", "Mi delantero"])
   })
 
   it("Debería no permitir confirmar sin elegir un comportamiento", async () => {
@@ -102,6 +122,21 @@ describe("BehaviorSelector", () => {
     await user.click(button("Confirmar"))
 
     expect(screen.getByRole("alert").textContent).toBe("Ese comportamiento no está disponible para tu equipo.")
+    expect(onChanged).not.toHaveBeenCalled()
+  })
+
+  // El contrato tiene dos versiones del rechazo, el 422 INVALID_BEHAVIOR (test anterior) o 400 INVALID_DATA
+  it("Debería informar el error del back y conservar el comportamiento anterior ante 400 INVALID_DATA", async () => {
+    changePlayerBehavior.mockRejectedValue(
+      new ApiError(400, "INVALID_DATA", "Los datos ingresados para el comportamiento no son validos")
+    )
+    const user = userEvent.setup()
+    const onChanged = renderSelector()
+
+    await abrirYElegir(user, "Mi delantero")
+    await user.click(button("Confirmar"))
+
+    expect(screen.getByRole("alert").textContent).toBe("Los datos ingresados para el comportamiento no son validos")
     expect(onChanged).not.toHaveBeenCalled()
   })
 })
