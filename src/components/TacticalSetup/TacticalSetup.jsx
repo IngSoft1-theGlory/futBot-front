@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import Button from "../Button/Button"
 import { httpService, ApiError } from "../../services/createhttpService"
+import { fetchBehaviors, filterPlayerBehaviors } from "../../services/behaviors"
 import { FORMATIONS, DEFAULT_FORMATION, SUBSTITUTES_COUNT, getFormation } from "./formations"
 import "./TacticalSetup.css"
 
@@ -144,11 +145,12 @@ function TacticalSetup({
   useEffect(() => {
     let isCancelled = false
 
-    Promise.all([fetchAllPlayers(), httpService.get("/behaviors")])
+    Promise.all([fetchAllPlayers(), fetchBehaviors()])
       .then(([playerList, behaviorList]) => {
         if (isCancelled) return
         setPlayers(playerList)
-        setBehaviors(Array.isArray(behaviorList) ? behaviorList : [])
+        // Solo se ofrecen los de jugador: un comportamiento de DT no se puede asignar en la alineación
+        setBehaviors(filterPlayerBehaviors(behaviorList))
         setStatus("success")
       })
       .catch((error) => {

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import Button from "../Button/Button"
 import { ApiError } from "../../services/createhttpService"
-import { fetchBehaviors } from "../../services/behaviors"
+import { fetchBehaviors, filterPlayerBehaviors } from "../../services/behaviors"
 import { changePlayerBehavior } from "../../services/matches"
 import "./BehaviorSelector.css"
 
@@ -47,7 +47,8 @@ function BehaviorSelector({ matchId, playerId, currentBehaviorId, onChanged }) {
     setLoadStatus("loading")
     fetchBehaviors()
       .then((list) => {
-        setBehaviors(list)
+        // Solo se ofrecen los de jugador, un comportamiento de DT no se puede asignar a un jugador
+        setBehaviors(filterPlayerBehaviors(list))
         setLoadStatus("ready")
       })
       .catch((err) => {
