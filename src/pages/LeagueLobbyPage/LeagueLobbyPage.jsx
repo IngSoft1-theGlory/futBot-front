@@ -12,6 +12,8 @@ import "./LeagueLobbyPage.css"
 const NETWORK_ERROR_MESSAGE =
   "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
 
+const LEAGUE_CANCELLED_MESSAGE = "La liga fue cancelada por el anfitrión."
+
 const STATUS_LABELS = {
   PENDING: "Esperando equipos",
   IN_PROGRESS: "En curso",
@@ -95,6 +97,13 @@ function LeagueLobbyPage() {
   const navigate = useNavigate()
   const { user } = useSession()
   const { league, status, error, refetchLeague } = useLeagueLobby(leagueId)
+
+  // Si cancelan esta liga, todos los que están en el lobby (también el anfitrión) vuelven
+  // al listado con el aviso. Las cancelaciones de otras ligas se ignoran
+  useGlobalEvent("LEAGUE_CANCELLED", (data) => {
+    if (data?.league_id !== Number(leagueId)) return
+    navigate("/leagues", { replace: true, state: { message: LEAGUE_CANCELLED_MESSAGE } })
+  })
 
   const [isLeaving, setIsLeaving] = useState(false)
   const [leaveError, setLeaveError] = useState(null)
