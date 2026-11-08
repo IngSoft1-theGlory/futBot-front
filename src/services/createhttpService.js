@@ -114,21 +114,33 @@ Significa más bien:
 
 */
 
-async function solicitar(baseUrl, method , path , body) {
+async function enviar(baseUrl, method , path , body) {
     const tieneCuerpo = body !== undefined && body !== null
   
-    const respuesta = await fetch(`${baseUrl}${path}`, { method,
-                                                   headers: construirHeaders(tieneCuerpo),
-                                                   body: tieneCuerpo ? JSON.stringify(body) : undefined,
+    return fetch(`${baseUrl}${path}`, { method,
+                                        headers: construirHeaders(tieneCuerpo),
+                                        body: tieneCuerpo ? JSON.stringify(body) : undefined,
     })
-  
+}
+
+async function solicitar(baseUrl, method , path , body) {
+    const respuesta = await enviar(baseUrl, method, path, body)
     return analizarRespuesta(respuesta)
+}
+
+// Igual que solicitar, pero devuelve también el código HTTP: { status, data }.
+// Sirve cuando un endpoint puede responder bien con distintos códigos (ej: 201 o 202).
+async function solicitarConStatus(baseUrl, method , path , body) {
+    const respuesta = await enviar(baseUrl, method, path, body)
+    const data = await analizarRespuesta(respuesta)
+    return { status: respuesta.status, data }
 }
 
 export function createHttpService(baseUrl = import.meta.env.VITE_API_BASE_URL) {
     return {
       get: (path) => solicitar(baseUrl, "GET", path),
       post: (path, body) => solicitar(baseUrl, "POST", path, body),
+      postWithStatus: (path, body) => solicitarConStatus(baseUrl, "POST", path, body),
       put: (path, body) => solicitar(baseUrl, "PUT", path, body),
       delete: (path) => solicitar(baseUrl, "DELETE", path),
     }

@@ -98,6 +98,25 @@ export function applySubstitution(match, playerOutId, playerInId) {
   }
 }
 
+// Guarda el cambio que el usuario dejó planificado para la próxima pausa (el back respondió 202).
+// Si ya había uno, lo reemplaza, igual que el back.
+export function applyPlannedSubstitution(match, playerOutId, playerInId) {
+  return { ...match, plannedSubstitution: { playerOutId, playerInId } }
+}
+
+// Al empezar una pausa el back aplica el cambio planificado, pero no llegan ticks hasta que termina.
+// Por eso se toma de /state la alineación: titulares, suplentes y el plan (que vuelve en null).
+// La pausa no se toca (la maneja PAUSE_STARTED). Si /state es más viejo que lo que se ve, se ignora.
+export function applyLineup(match, freshState) {
+  if (freshState.currentTick < match.currentTick) return match
+  return {
+    ...match,
+    players: freshState.players,
+    substitutes: freshState.substitutes,
+    plannedSubstitution: freshState.plannedSubstitution ?? null,
+  }
+}
+
 // Ids de los jugadores en cancha de los que todavía faltan datos (nombre, número...)
 export function playersMissingDetails(match) {
   return (match?.players ?? []).filter((player) => player.needsDetails).map((player) => player.player_id)

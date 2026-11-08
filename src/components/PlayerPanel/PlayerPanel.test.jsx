@@ -111,6 +111,15 @@ describe("PlayerPanel", () => {
     expect(urls.some((url) => url.includes("/state"))).toBe(false)
   })
 
+  it("Debería ofrecer planificar un cambio solo si la pantalla lo permite", async () => {
+    const { rerender } = render(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canSubstitute />)
+    await screen.findByText("Defensivo")
+    expect(screen.getByRole("button", { name: "Planificar cambio" })).toBeTruthy()
+
+    rerender(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canSubstitute={false} />)
+    expect(screen.queryByRole("button", { name: "Planificar cambio" })).toBeNull()
+  })
+
   it("Debería no dibujar nada si no hay jugador seleccionado", () => {
     const { container } = render(<PlayerPanel player={null} onClose={() => {}} />)
     expect(container.innerHTML).toBe("")

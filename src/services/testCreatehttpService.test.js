@@ -177,6 +177,16 @@ describe("httpService", () => {
     })
   })
 
+  describe("postWithStatus", () => {
+    it("Debería devolver el código HTTP junto con los datos de la respuesta", async () => {
+      global.fetch.mockResolvedValue(fakeResponse({ status: 202, ok: true, body: { match_id: 12 } }))
+
+      const result = await httpService.postWithStatus("/matches/12/teams/1/substitutions", { player_in_id: 105 })
+
+      expect(result).toEqual({ status: 202, data: { match_id: 12 } })
+    })
+  })
+
   describe("createHttpService", () => {
     it("Usa la baseUrl que se le pasa en vez de la default", async () => {
       global.fetch.mockResolvedValue(fakeResponse({ status: 200, ok: true, body: {} }))

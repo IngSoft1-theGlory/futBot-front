@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ApiError } from "../services/createhttpService"
 import { fetchMatchState, fetchMatchTeams } from "../services/matches"
 import { openMatchSocket } from "../services/matchSockets"
-import { applyTick, applyFullState, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, isMatchOver, mightGoToPenalties, startPause, finishPause, countDownPause, startPenalties, finishPenalties, MATCH_FINISHED } from "../services/matchState"
+import { applyTick, applyFullState, applyBehaviorChange, applySubstitution, applyPlannedSubstitution, applyLineup, applyPlayerDetails, playersMissingDetails, isMatchOver, mightGoToPenalties, startPause, finishPause, countDownPause, startPenalties, finishPenalties, MATCH_FINISHED } from "../services/matchState"
 import { useGlobalEvent } from "./useGlobalEvent"
 
 const ONE_SECOND_MS = 1000
@@ -12,7 +12,8 @@ const ONE_SECOND_MS = 1000
 //   1. carga el estado inicial (partido + equipos) en paralelo
 //   2. abre la conexión en vivo y aplica cada TICK_UPDATE
 //   3. registra las pausas (PAUSE_STARTED / PAUSE_FINISHED) y lleva su cuenta regresiva,
-//      y también los penales (PENALTIES_STARTED / PENALTIES_FINISHED)
+//      y también los penales (PENALTIES_STARTED / PENALTIES_FINISHED).
+//      Al empezar una pausa pide la alineación a /state (el back ya aplicó el cambio planificado)
 //   4. al abrir la conexión (y al reconectarse) pide el estado de nuevo
 //   5. cuando entra un jugador nuevo a la cancha (sustitución), pide sus datos a /state
 //   6. cuando el partido termina, navega al resultado
@@ -20,12 +21,13 @@ const ONE_SECOND_MS = 1000
 //
 // Devuelve lo que la pantalla necesita para dibujarse:
 //   status:       "loading" | "ready" | "connection-error" | "not-participant" | "not-found"
-//   match:        estado del partido { currentTick, totalTicks, score, ball, players, substitutes, pause } NOTA = pause es null si no hay pausa, o { type, remainingSeconds } si la hay
+//   match:        estado del partido { currentTick, totalTicks, score, ball, players, substitutes, pause, plannedSubstitution } NOTA = pause es null si no hay pausa, o { type, remainingSeconds } si la hay
 //   teams:        { home, away } con { id, name, logo }
 //   reconnecting: true mientras la conexión en vivo está cortada
 //   retry:        función para volver a intentar después de un error de conexión
 //   updatePlayerBehavior: actualiza el comportamiento de un jugador cuando el back confirma el cambio
 //   substitutePlayer:     aplica en la cancha una sustitución cuando el back la confirma
+//   planSubstitution:     guarda el cambio planificado para la próxima pausa cuando el back lo acepta
 
 export function useMatchLive(matchId) {
   const navigate = useNavigate()
@@ -138,6 +140,18 @@ export function useMatchLive(matchId) {
         })
     }
 
+    // Al empezar una pausa el back ya aplicó el cambio planificado, pero no hay ticks
+    // hasta que termine: se pide la alineación nueva a /state
+    function refreshLineup() {
+      fetchMatchState(matchId)
+        .then((freshState) => {
+          if (isActive) setMatch((current) => applyLineup(current, freshState))
+        })
+        .catch(() => {
+          // Si falla, la alineación se actualiza con el primer tick después de la pausa
+        })
+    }
+
     async function start() {
       // 1) Carga inicial: los dos pedidos salen a la vez y esperamos a que lleguen ambos
       try {
@@ -161,7 +175,9 @@ export function useMatchLive(matchId) {
           if (isActive) setMatch((current) => applyTick(current, tick))
         },
         onPauseStarted: (message) => {
-          if (isActive) setMatch((current) => startPause(current, message))
+          if (!isActive) return
+          setMatch((current) => startPause(current, message))
+          refreshLineup()
         },
         onPauseFinished: () => {
           if (isActive) setMatch((current) => finishPause(current))
@@ -209,5 +225,9 @@ export function useMatchLive(matchId) {
     setMatch((current) => (current ? applySubstitution(current, playerOutId, playerInId) : current))
   }
 
-  return { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer }
+  function planSubstitution(playerOutId, playerInId) {
+    setMatch((current) => (current ? applyPlannedSubstitution(current, playerOutId, playerInId) : current))
+  }
+
+  return { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer, planSubstitution }
 }

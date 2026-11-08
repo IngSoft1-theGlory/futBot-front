@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 // Se reemplaza el cliente HTTP por uno falso: así controlamos qué "responde el backend"
 vi.mock("./createhttpService", async (importOriginal) => {
   const original = await importOriginal()
-  return { ...original, httpService: { get: vi.fn(), post: vi.fn() } }
+  return { ...original, httpService: { get: vi.fn(), post: vi.fn(), postWithStatus: vi.fn() } }
 })
 
 import { httpService } from "./createhttpService"
@@ -44,6 +44,14 @@ describe("fetchMatchState", () => {
 
     expect(state.pause).toEqual({ type: "HT", remainingSeconds: 42 })
     expect(state.currentTick).toBe(600)
+  })
+
+  it("Debería devolver el cambio planificado del propio equipo, o null si no hay", async () => {
+    httpService.get.mockResolvedValueOnce({ ...STATE_RESPONSE, planned_substitution: { player_in_id: 105, player_out_id: 101 } })
+    httpService.get.mockResolvedValueOnce({ ...STATE_RESPONSE, planned_substitution: null })
+
+    expect((await fetchMatchState("12")).plannedSubstitution).toEqual({ playerOutId: 101, playerInId: 105 })
+    expect((await fetchMatchState("12")).plannedSubstitution).toBeNull()
   })
 
   it("Debería devolver los suplentes del propio equipo", async () => {
@@ -91,18 +99,27 @@ describe("fetchMatchState", () => {
 
 describe("requestSubstitution", () => {
   beforeEach(() => {
-    httpService.post.mockReset()
+    httpService.postWithStatus.mockReset()
   })
 
   it("Debería pedir la sustitución al equipo y partido indicados, con quién sale y quién entra", async () => {
-    httpService.post.mockResolvedValue({})
+    httpService.postWithStatus.mockResolvedValue({ status: 201, data: {} })
 
     await requestSubstitution(12, 1, 101, 105)
 
-    expect(httpService.post).toHaveBeenCalledWith("/matches/12/teams/1/substitutions", {
+    expect(httpService.postWithStatus).toHaveBeenCalledWith("/matches/12/teams/1/substitutions", {
       player_out_id: 101,
       player_in_id: 105,
     })
+  })
+
+  it.each([
+    [202, true],
+    [201, false],
+  ])("Debería indicar si el cambio quedó planificado cuando el back responde %i", async (status, planned) => {
+    httpService.postWithStatus.mockResolvedValue({ status, data: {} })
+
+    expect(await requestSubstitution(12, 1, 101, 105)).toEqual({ planned })
   })
 })
 

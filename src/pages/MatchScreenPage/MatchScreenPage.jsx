@@ -19,7 +19,7 @@ const CONNECTION_ERROR_MESSAGE = "Error al no poder iniciar el partido por falla
 // Lo único que maneja acá es qué jugador está seleccionado.
 function MatchPage() {
   const { matchId } = useParams()
-  const { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer } = useMatchLive(matchId)
+  const { status, match, teams, reconnecting, retry, updatePlayerBehavior, substitutePlayer, planSubstitution } = useMatchLive(matchId)
   const { user } = useSession()
 
   // Guardamos solo el ID del jugador seleccionado (no el jugador entero),
@@ -75,6 +75,11 @@ function MatchPage() {
   const penalties = match.score?.phome != null ? { home: match.score.phome, away: match.score.paway } : null
   const isPenalties = Boolean(match.isPenalties)
 
+  // Durante el partido se puede planificar un cambio de un jugador propio.
+  // En la pausa se usa el menú de pausa, y en los penales no hay cambios.
+  const isOwnPlayer = selectedPlayer?.team_id === user?.team_id
+  const canSubstitute = isOwnPlayer && !match.pause && !isPenalties
+
   return (
     <main className="match-page">
       {/* Aviso de corte: se muestra ARRIBA de la pantalla, sin borrar lo que ya se veía */}
@@ -125,9 +130,15 @@ function MatchPage() {
             player={selectedPlayer}
             onClose={() => setSelectedPlayerId(null)}
             matchId={Number(matchId)}
-            canChangeBehavior={selectedPlayer.team_id === user?.team_id}
+            canChangeBehavior={isOwnPlayer}
             isPenalties={isPenalties}
             onBehaviorChanged={(behaviorId) => updatePlayerBehavior(selectedPlayer.player_id, behaviorId)}
+            canSubstitute={canSubstitute}
+            teamId={user?.team_id}
+            substitutes={match.substitutes ?? []}
+            plannedSubstitution={match.plannedSubstitution ?? null}
+            onPlanned={planSubstitution}
+            onSubstituted={substitutePlayer}
           />
         )}
       </div>

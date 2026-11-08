@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { httpService } from "../../services/createhttpService"
 import BehaviorSelector from "../BehaviorSelector/BehaviorSelector"
+import SubstitutionSelector from "../SubstitutionSelector/SubstitutionSelector"
 import "./PlayerPanel.css"
 
 const ATTRIBUTES = [
@@ -12,7 +13,21 @@ const ATTRIBUTES = [
 ]
 
 // En penales el back asigna arquero o pateador, así que no se puede cambiar el comportamiento
-function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, isPenalties = false, onBehaviorChanged }) {
+// canSubstitute: la pantalla decide si se puede planificar un cambio (jugador propio, sin pausa ni penales)
+function PlayerPanel({
+  player,
+  onClose,
+  matchId,
+  canChangeBehavior = false,
+  isPenalties = false,
+  onBehaviorChanged,
+  canSubstitute = false,
+  teamId,
+  substitutes = [],
+  plannedSubstitution = null,
+  onPlanned,
+  onSubstituted,
+}) {
   const [behavior, setBehavior] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -98,6 +113,23 @@ function PlayerPanel({ player, onClose, matchId, canChangeBehavior = false, isPe
           />
         )}
       </section>
+
+      {canSubstitute && (
+        <section className="player-panel__substitution">
+          <h3 className="player-panel__section-title">Sustitución</h3>
+          {/* El key reinicia el selector al elegir otro jugador */}
+          <SubstitutionSelector
+            key={player.player_id}
+            matchId={matchId}
+            teamId={teamId}
+            player={player}
+            substitutes={substitutes}
+            plannedSubstitution={plannedSubstitution}
+            onPlanned={onPlanned}
+            onSubstituted={onSubstituted}
+          />
+        </section>
+      )}
     </aside>
   )
 }

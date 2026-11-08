@@ -45,10 +45,11 @@ vi.mock("../../components/MatchField/MatchField", () => ({
 }))
 
 vi.mock("../../components/PlayerPanel/PlayerPanel", () => ({
-  default: ({ player, onClose, canChangeBehavior }) => (
+  default: ({ player, onClose, canChangeBehavior, canSubstitute }) => (
     <aside data-testid="player-panel">
       <p>{`Panel de ${player.name}`}</p>
       {canChangeBehavior && <p>Puede cambiar el comportamiento</p>}
+      {canSubstitute && <p>Puede planificar un cambio</p>}
       <p data-testid="panel-x">{player.position.x}</p>
       <button onClick={onClose}>Cerrar panel</button>
     </aside>
@@ -182,6 +183,30 @@ describe("MatchScreenPage", () => {
 
       elegirJugador("Ronaldo")
       expect(screen.queryByText("Puede cambiar el comportamiento")).toBeNull()
+    })
+  })
+
+  describe("Planificar un cambio", () => {
+    it("Debería permitir planificar un cambio solo de los jugadores del propio equipo", () => {
+      render(pagina())
+
+      elegirJugador("Messi")
+      expect(screen.getByText("Puede planificar un cambio")).toBeTruthy()
+
+      elegirJugador("Ronaldo")
+      expect(screen.queryByText("Puede planificar un cambio")).toBeNull()
+    })
+
+    it.each([
+      ["en una pausa", { pause: { type: "HALF_TIME", remainingSeconds: 25 } }],
+      ["en los penales", { isPenalties: true }],
+    ])("Debería no permitir planificar un cambio %s", (_caso, cambios) => {
+      mockHook({ match: { ...MATCH, ...cambios } })
+      render(pagina())
+
+      elegirJugador("Messi")
+
+      expect(screen.queryByText("Puede planificar un cambio")).toBeNull()
     })
   })
 
