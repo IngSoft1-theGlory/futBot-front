@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useSession } from "../../hooks/useSession"
 import { ApiError } from "../../services/createhttpService"
-import { fetchMatchResult, getOutcome } from "../../services/matchResult"
+import { fetchMatchResult, getOutcome, hasPenalties } from "../../services/matchResult"
 import "./MatchResultPage.css"
 
 const OUTCOME_TEXT = {
@@ -88,6 +88,7 @@ function MatchResultPage() {
   }
 
   const outcome = getOutcome(result, user?.team_id)
+  const showPenalties = hasPenalties(result)
 
   return (
     <main className="match-result-page">
@@ -100,18 +101,32 @@ function MatchResultPage() {
       )}
 
       <div className="match-result-page__teams">
-        {[result.home, result.away].map((team) => (
-          <section
-            key={team.id}
-            className={`result-team${team.id === user?.team_id ? " result-team--own" : ""}`}
-          >
-            <h2 className="result-team__name">{team.name}</h2>
-            <p className="result-team__goals" aria-label={`Goles de ${team.name}`}>
-              {team.goals}
-            </p>
-            {team.id === user?.team_id && <span className="result-team__badge">Tu Equipo</span>}
-          </section>
-        ))}
+        {[result.home, result.away].map((team) => {
+          const isHome = team === result.home
+          // los penales van del lado de afuera de los goles: (2) 0 en el local y 0 (1) en el visitante
+          const penaltiesText = showPenalties && (
+            <span className="result-team__penalties" aria-label={`Penales de ${team.name}`}>
+              ({team.penaltyGoals})
+            </span>
+          )
+
+          return (
+            <section
+              key={team.id}
+              className={`result-team${team.id === user?.team_id ? " result-team--own" : ""}`}
+            >
+              <h2 className="result-team__name">{team.name}</h2>
+              <div className="result-team__score">
+                {isHome && penaltiesText}
+                <p className="result-team__goals" aria-label={`Goles de ${team.name}`}>
+                  {team.goals}
+                </p>
+                {!isHome && penaltiesText}
+              </div>
+              {team.id === user?.team_id && <span className="result-team__badge">Tu Equipo</span>}
+            </section>
+          )
+        })}
       </div>
 
       <div className="match-result-page__actions">

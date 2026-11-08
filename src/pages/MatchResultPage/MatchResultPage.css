@@ -66,11 +66,26 @@
   font-size: 1.1rem;
 }
 
+/* Goles y penales en la misma línea: (2) 0 en el local y 0 (1) en el visitante */
+.result-team__score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .result-team__goals {
   margin: 0.5rem 0;
   font-size: 3rem;
   font-weight: 700;
   color: #f8fafc;
+}
+
+/* Penales: más chicos y de otro color que los goles, como en el marcador del partido en vivo */
+.result-team__penalties {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #818cf8;
 }
 
 .result-team__badge {
