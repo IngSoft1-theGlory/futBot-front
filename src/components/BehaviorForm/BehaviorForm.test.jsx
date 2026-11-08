@@ -23,8 +23,8 @@ const VALID = {
   code: "def on_tick(api): pass",
 }
 
-// Comportamiento Propio
-const mockBehavior = { behavior_id: 7, ...VALID, is_default: false }
+// Comportamiento Propio (de DT, para comprobar que al editar se muestra el tipo guardado y no el de por defecto)
+const mockBehavior = { behavior_id: 7, ...VALID, is_default: false, behavior_type: "COACH" }
 
 // Los labels terminan en ":", por eso se buscan con regex y no con el texto exacto
 async function completarFormulario({ name, description, code }) {
@@ -54,21 +54,37 @@ describe("BehaviorForm", () => {
   })
 
   describe("Crear", () => {
-    it("Debería mostrar el formulario vacío, sin pedir nada al back, y enviar los tres campos con POST /behaviors", async () => {
-      const guardado = { behavior_id: 9, ...VALID, is_default: false }
+    it("Debería mostrar el formulario vacío con el tipo Jugador por defecto, sin pedir nada al back, y enviar los campos con POST /behaviors", async () => {
+      const guardado = { behavior_id: 9, ...VALID, is_default: false, behavior_type: "PLAYER" }
       httpService.post.mockResolvedValue(guardado)
       const onSaved = vi.fn()
       renderCrear(onSaved)
 
       expect(screen.getByRole("heading", { name: /crear comportamiento/i })).toBeInTheDocument()
       expect(screen.getByLabelText(/nombre/i)).toHaveValue("")
+      expect(screen.getByLabelText(/tipo/i)).toHaveValue("PLAYER")   // sin tocar nada, queda Jugador
       expect(httpService.get).not.toHaveBeenCalled()
 
       await completarFormulario(VALID)
       await userEvent.click(guardar())
 
-      expect(httpService.post).toHaveBeenCalledWith("/behaviors", VALID)
+      expect(httpService.post).toHaveBeenCalledWith("/behaviors", { ...VALID, behavior_type: "PLAYER" })
       await waitFor(() => expect(onSaved).toHaveBeenCalledWith(guardado))
+    })
+
+    // Se elige cada opción por el texto que ve el usuario y se comprueba el valor que llega al back
+    it.each([
+      ["Jugador", "PLAYER"],
+      ["DT", "COACH"],
+    ])("Debería enviar el tipo elegido al crear: '%s' se manda como %s", async (opcion, tipoEnviado) => {
+      httpService.post.mockResolvedValue({ behavior_id: 9, ...VALID, is_default: false, behavior_type: tipoEnviado })
+      renderCrear()
+
+      await userEvent.selectOptions(screen.getByLabelText(/tipo/i), opcion)
+      await completarFormulario(VALID)
+      await userEvent.click(guardar())
+
+      expect(httpService.post).toHaveBeenCalledWith("/behaviors", { ...VALID, behavior_type: tipoEnviado })
     })
   })
 
@@ -134,6 +150,28 @@ describe("BehaviorForm", () => {
       expect(httpService.put).toHaveBeenCalledWith("/behaviors/7", { ...VALID, name: "Nuevo nombre" })
       expect(httpService.post).not.toHaveBeenCalled()
       await waitFor(() => expect(onSaved).toHaveBeenCalledWith(editado))
+    })
+
+    it("Debería mostrar el tipo guardado como solo lectura, sin poder cambiarlo, y no enviarlo en el PUT", async () => {
+      httpService.get.mockResolvedValue(mockBehavior)
+      httpService.put.mockResolvedValue(mockBehavior)
+      renderEditar()
+
+      const tipo = await screen.findByLabelText(/tipo/i)
+      expect(tipo).toHaveValue("DT")                         // el tipo que vino del back, no el de por defecto
+      expect(tipo).toHaveAttribute("readonly")
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument()   // no hay desplegable para elegir otro
+
+      // Intentar escribir en un campo de solo lectura no cambia nada
+      await userEvent.type(tipo, "Jugador")
+      expect(tipo).toHaveValue("DT")
+
+      await userEvent.click(guardar())
+
+      await waitFor(() => expect(httpService.put).toHaveBeenCalledTimes(1))
+      const [, bodyEnviado] = httpService.put.mock.calls[0]
+      expect(bodyEnviado).toEqual(VALID)                     // solo nombre, descripción y código
+      expect(bodyEnviado).not.toHaveProperty("behavior_type")
     })
 
     it("Debería mostrar el error de carga y permitir volver si el comportamiento no existe", async () => {

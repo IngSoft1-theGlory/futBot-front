@@ -4,6 +4,7 @@ import Button from "../Button/Button"
 import CodeMirror from "@uiw/react-codemirror"
 import { python } from "@codemirror/lang-python"
 import BehaviorHelp from "../BehaviorHelp/BehaviorHelp"
+import { BEHAVIOR_TYPE_LABELS } from "../../constants/behaviorTypes"
 import "./BehaviorForm.css"
 
 const MAX_NAME_LENGTH = 100
@@ -57,6 +58,7 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [code, setCode] = useState("")
+  const [behaviorType, setBehaviorType] = useState("PLAYER")  // "PLAYER" o "COACH", al crear arranca en PLAYER
 
   // Errores de los campos
   const [fieldErrors, setFieldErrors] = useState({})
@@ -80,6 +82,7 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
         setName(data.name)
         setDescription(data.description)
         setCode(data.code)
+        setBehaviorType(data.behavior_type)   // solo para mostrarlo, al editar no se puede cambiar
         setLoadStatus("success")    // Se muestra el formulario
       })
       .catch((err) => {
@@ -131,9 +134,11 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
     const body = { name, description, code }
     let request
     if (isEditing) {
+      // Al editar no se manda el tipo, una vez creado, no se puede cambiar
       request = httpService.put(`/behaviors/${behaviorId}`, body)
     } else {
-      request = httpService.post(`/behaviors`, body)
+      // Al crear se manda siempre el tipo elegido, junto con los otros tres campos
+      request = httpService.post(`/behaviors`, { ...body, behavior_type: behaviorType })
     }
 
 
@@ -175,6 +180,28 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
       </h2>
  
       <form onSubmit={handleSubmit}>
+        {/* Tipo: al crear se elige; al editar solo se muestra (no se puede cambiar) */}
+        <div className="behavior-form__field">
+          <label htmlFor="behavior-type">Tipo:</label>
+          {isEditing ? (
+            <input
+              id="behavior-type"
+              type="text"
+              value={BEHAVIOR_TYPE_LABELS[behaviorType]}
+              readOnly
+            />
+          ) : (
+            <select
+              id="behavior-type"
+              value={behaviorType}
+              onChange={(e) => setBehaviorType(e.target.value)}
+            >
+              <option value="PLAYER">{BEHAVIOR_TYPE_LABELS.PLAYER}</option>
+              <option value="COACH">{BEHAVIOR_TYPE_LABELS.COACH}</option>
+            </select>
+          )}
+        </div>
+
         {/* Nombre */}
         <div className="behavior-form__field">
           <label htmlFor="behavior-name">Nombre:</label>

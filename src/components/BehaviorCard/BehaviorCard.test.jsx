@@ -10,6 +10,7 @@ const mockBehavior = {
   description: "El jugador corre hacia adelante y patea la pelota",
   code: "def on_tick(api): pass",
   is_default: true,
+  behavior_type: "PLAYER",
 }
 
 describe("BehaviorCard", () => {
@@ -40,6 +41,15 @@ describe("BehaviorCard", () => {
       // rerender del mismo componente con otras props
       rerender(<BehaviorCard behavior={{ ...mockBehavior, is_default: false }} onSelect={mockOnSelect} />)
       expect(screen.queryByText("Por default")).not.toBeInTheDocument()
+    })
+
+    it.each([
+      ["PLAYER", "Jugador"],
+      ["COACH", "DT"],
+    ])("Debería mostrar la etiqueta del tipo: %s se ve como '%s'", (tipo, etiqueta) => {
+      render(<BehaviorCard behavior={{ ...mockBehavior, behavior_type: tipo }} onSelect={mockOnSelect} />)
+
+      expect(screen.getByText(etiqueta)).toBeInTheDocument()
     })
   })
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { httpService, ApiError } from "../../services/createhttpService"
 import Button from "../Button/Button"
+import { BEHAVIOR_TYPE_LABELS } from "../../constants/behaviorTypes"
 import "./BehaviorDetail.css"
 
 // elige que mensaje mostrar segun el error que devolvio el backend
@@ -49,6 +50,9 @@ function BehaviorDetail({ behaviorId, onBack, onEdit }) {
     }
   }, [behaviorId])
 
+  // texto del tipo ("Jugador" o "DT"), mientras carga, behavior es null y no hay nada que mostrar, si el back manda un tipo desconocido, también queda vacío y la etiqueta no se muestra
+  const typeLabel = behavior && BEHAVIOR_TYPE_LABELS[behavior.behavior_type]
+
   return (
     <section className="behavior-detail">
       <div className="behavior-detail__toolbar">
@@ -77,6 +81,7 @@ function BehaviorDetail({ behaviorId, onBack, onEdit }) {
         <div className="behavior-detail__content">
           <div className="behavior-detail__header">
             <h2 className="behavior-detail__name">{behavior.name}</h2>
+            {typeLabel && <span className="behavior-detail__badge">{typeLabel}</span>}
             {/* La etiqueta solo aparece si es un comportamiento por default */}
             {behavior.is_default && <span className="behavior-detail__badge">Por default</span>}
           </div>
