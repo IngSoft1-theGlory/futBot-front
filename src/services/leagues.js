@@ -12,6 +12,7 @@ function leagueMapping(league) {
     teamsCurrent: league.current_teams_count,
     maxTeams: league.max_teams,
     isPrivate: league.is_private,
+    isMember: league.is_member,
   }
 }
 

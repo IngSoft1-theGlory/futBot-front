@@ -15,7 +15,9 @@ function LeagueListPage() {
   // privada: primero se verifica la contraseña, publica: directo a la inscripcion
   function onSelectLeague(league) {
     const state = { leagueName: league.leagueName }
-    if (league.isPrivate) {
+    if (league.isMember) {
+      navigate(`/leagues/${league.leagueId}`, { state })
+    } else if (league.isPrivate) {
       navigate(`/leagues/${league.leagueId}/verify-password`, { state })
     } else {
       navigate(`/leagues/${league.leagueId}/join`, { state })
@@ -55,22 +57,28 @@ function LeagueListPage() {
         <ul className="friendly-list">
           {leagues.map((league) => {
             const isFull = isLeagueFull(league)
-
+            const isBlocked = isFull && !league.isMember
             return (
               <li key={league.leagueId}>
                 <button
                   type="button"
-                  className="friendly-card"
-                  disabled={isFull}
+                  className={`friendly-card${league.isMember ? " friendly-card--own" : ""}`}
+                  disabled={isBlocked}
                   onClick={() => onSelectLeague(league)}
                 >
-                  <span className="friendly-card__teams">{league.leagueName}</span>
+                  <span className="friendly-card__teams">
+                    {league.isMember && <span className="friendly-card__badge">Miembro</span>}
+                    {league.leagueName}
+                  </span>
                   <span className="friendly-card__meta">
-                    {league.isPrivate ? "Privada" : "Pública"}
-                    <span>
-                      {league.teamsCurrent} / {league.maxTeams}
-                    </span>
-                    {isFull && <span className="friendly-card__action">Llena</span>}
+                    <strong>{league.isPrivate ? "Privada" : "Pública"}</strong>
+                    <strong>{league.teamsCurrent} / {league.maxTeams}</strong>
+                    {isBlocked && <span className="friendly-card__action">Llena</span>}
+                    {!isBlocked && (
+                      <span className="friendly-card__action">
+                        {league.isMember ? "Ir a la sala" : "Unirme"}
+                      </span>
+                    )}
                   </span>
                 </button>
               </li>

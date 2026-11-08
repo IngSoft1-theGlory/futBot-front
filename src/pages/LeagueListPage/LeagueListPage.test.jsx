@@ -16,6 +16,10 @@ import LeagueListPage from "./LeagueListPage"
 const PUBLICA = { leagueId: 1, leagueName: "Liga Pública", teamsCurrent: 2, maxTeams: 8, isPrivate: false }
 const PRIVADA = { leagueId: 2, leagueName: "Liga Privada", teamsCurrent: 3, maxTeams: 4, isPrivate: true }
 const LLENA = { leagueId: 3, leagueName: "Liga Llena", teamsCurrent: 4, maxTeams: 4, isPrivate: false }
+const MIEMBRO_PUBLICA = { ...PUBLICA, leagueId: 4, leagueName: "Mi Liga Pública", isMember: true }
+const MIEMBRO_PRIVADA = { ...PRIVADA, leagueId: 5, leagueName: "Mi Liga Privada", isMember: true }
+const MIEMBRO_LLENA = { ...LLENA, leagueId: 6, leagueName: "Mi Liga Llena", isMember: true }
+
 
 function renderPage() {
   return render(
@@ -25,6 +29,7 @@ function renderPage() {
         <Route path="/leagues/new" element={<h1>Crear liga</h1>} />
         <Route path="/leagues/:leagueId/join" element={<h1>Inscripción</h1>} />
         <Route path="/leagues/:leagueId/verify-password" element={<h1>Verificar contraseña</h1>} />
+        <Route path="/leagues/:leagueId" element={<h1>Lobby</h1>} />
       </Routes>
     </MemoryRouter>
   )
@@ -90,5 +95,33 @@ describe("LeagueListPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Siguiente" }))
     await waitFor(() => expect(fetchLeagues).toHaveBeenLastCalledWith({ page: 2, limit: 20 }))
     await waitFor(() => expect(screen.getByRole("button", { name: "Siguiente" }).disabled).toBe(true))
+  })
+
+  it("Debería redireccionar un miembro de la liga publica al lobby", async () => {
+    fetchLeagues.mockResolvedValue([MIEMBRO_PUBLICA])
+    renderPage()
+    await userEvent.click(await screen.findByText("Mi Liga Pública"))
+    expect(screen.getByRole("heading", { name: "Lobby" })).toBeTruthy()
+  })
+
+  it("Debería un miembro de una liga privada ir al lobby", async () => {
+    fetchLeagues.mockResolvedValue([MIEMBRO_PRIVADA])
+    renderPage()
+    await userEvent.click(await screen.findByText("Mi Liga Privada"))
+    expect(screen.getByRole("heading", { name: "Lobby" })).toBeTruthy()
+  })
+
+  it("Debería cambiar la tarjeta si sos miembro o no", async () => {
+    fetchLeagues.mockResolvedValue([MIEMBRO_PUBLICA, PUBLICA])
+    renderPage()
+    expect(await screen.findByRole("button", { name: /Ir a la sala/ })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /Unirme/ })).toBeTruthy()
+  })
+
+  it("Debería un miembro de una liga llena poder entrar al lobby", async () => {
+    fetchLeagues.mockResolvedValue([MIEMBRO_LLENA])
+    renderPage()
+    await userEvent.click(await screen.findByText("Mi Liga Llena"))
+    expect(screen.getByRole("heading", { name: "Lobby" })).toBeTruthy()
   })
 })
