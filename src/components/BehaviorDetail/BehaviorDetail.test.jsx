@@ -25,6 +25,7 @@ const mockBehavior = {
   description: "El jugador corre hacia adelante y patea la pelota",
   code: CODE,
   is_default: true,
+  behavior_type: "PLAYER",
 }
 const mockCustom = { ...mockBehavior, is_default: false }
 
@@ -77,6 +78,17 @@ describe("BehaviorDetail", () => {
 
       expect(onEdit).toHaveBeenCalledTimes(1)
       expect(screen.queryByText("Por default")).not.toBeInTheDocument()
+    })
+
+    it.each([
+      ["PLAYER", "Jugador"],
+      ["COACH", "DT"],
+    ])("Debería mostrar el tipo del comportamiento: %s se ve como '%s'", async (tipo, etiqueta) => {
+      httpService.get.mockResolvedValue({ ...mockCustom, behavior_type: tipo })
+      renderDetail()
+
+      await screen.findByRole("heading", { name: "Atacar arco" })
+      expect(screen.getByText(etiqueta)).toBeInTheDocument()
     })
   })
 

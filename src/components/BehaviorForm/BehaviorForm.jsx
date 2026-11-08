@@ -4,6 +4,7 @@ import Button from "../Button/Button"
 import CodeMirror from "@uiw/react-codemirror"
 import { python } from "@codemirror/lang-python"
 import BehaviorHelp from "../BehaviorHelp/BehaviorHelp"
+import { BEHAVIOR_TYPE_LABELS } from "../../constants/behaviorTypes"
 import "./BehaviorForm.css"
 
 const MAX_NAME_LENGTH = 100
@@ -57,6 +58,7 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [code, setCode] = useState("")
+  const [behaviorType, setBehaviorType] = useState("PLAYER")  // "PLAYER" o "COACH", al crear arranca en PLAYER
 
   // Errores de los campos
   const [fieldErrors, setFieldErrors] = useState({})
@@ -80,6 +82,7 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
         setName(data.name)
         setDescription(data.description)
         setCode(data.code)
+        setBehaviorType(data.behavior_type)   // solo para mostrarlo, al editar no se puede cambiar
         setLoadStatus("success")    // Se muestra el formulario
       })
       .catch((err) => {
@@ -131,9 +134,11 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
     const body = { name, description, code }
     let request
     if (isEditing) {
+      // Al editar no se manda el tipo, una vez creado, no se puede cambiar
       request = httpService.put(`/behaviors/${behaviorId}`, body)
     } else {
-      request = httpService.post(`/behaviors`, body)
+      // Al crear se manda siempre el tipo elegido, junto con los otros tres campos
+      request = httpService.post(`/behaviors`, { ...body, behavior_type: behaviorType })
     }
 
 
@@ -168,13 +173,38 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
   }
  
   const isCodeTooLong = code.length > MAX_CODE_LENGTH
+  // Texto del tipo ("Jugador" o "DT"). Queda undefined si el back no mandó el tipo
+  const behaviorTypeLabel = BEHAVIOR_TYPE_LABELS[behaviorType]
   return (
     <section className="behavior-form">
       <h2 className="behavior-form__title">
         {isEditing ? "Editar comportamiento" : "Crear comportamiento"}
       </h2>
- 
+
+      {/* Al editar el tipo no se puede cambiar: se muestra como texto, sin campo.
+          Si el back no mandó el tipo, no se muestra nada (mejor que una línea vacía) */}
+      {isEditing && behaviorTypeLabel && (
+        <p className="behavior-form__type">
+          Tipo: <strong>{behaviorTypeLabel}</strong>
+        </p>
+      )}
+
       <form onSubmit={handleSubmit}>
+        {/* Tipo: solo al crear se elige con el desplegable */}
+        {!isEditing && (
+          <div className="behavior-form__field">
+            <label htmlFor="behavior-type">Tipo:</label>
+            <select
+              id="behavior-type"
+              value={behaviorType}
+              onChange={(e) => setBehaviorType(e.target.value)}
+            >
+              <option value="PLAYER">{BEHAVIOR_TYPE_LABELS.PLAYER}</option>
+              <option value="COACH">{BEHAVIOR_TYPE_LABELS.COACH}</option>
+            </select>
+          </div>
+        )}
+
         {/* Nombre */}
         <div className="behavior-form__field">
           <label htmlFor="behavior-name">Nombre:</label>

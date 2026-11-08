@@ -61,7 +61,8 @@
 }
 
 .behavior-form__field input,
-.behavior-form__field textarea {
+.behavior-form__field textarea,
+.behavior-form__field select {
   box-sizing: border-box;
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -77,10 +78,23 @@
 }
 
 .behavior-form__field input:focus-visible,
-.behavior-form__field textarea:focus-visible {
+.behavior-form__field textarea:focus-visible,
+.behavior-form__field select:focus-visible {
   border-color: #818cf8;
   outline: 2px solid #818cf8;
   outline-offset: 2px;
+}
+
+/* Tipo del comportamiento al editar: texto debajo del título, sin campo */
+.behavior-form__type {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+/* El tipo ("DT" o "Jugador") resaltado para que se lea de un vistazo */
+.behavior-form__type strong {
+  color: #f8fafc;
 }
 
 /* Contenedor del editor de código (CodeMirror) */

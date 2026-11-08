@@ -18,17 +18,18 @@ vi.mock("@uiw/react-codemirror", () => ({
 }))
 
 const mockBehaviors = [
-  { behavior_id: 1, name: "Atacar arco", description: "Corre y patea", code: "def on_tick(api): pass", is_default: true },
-  { behavior_id: 2, name: "Defender", description: "Se queda atras", code: "def on_tick(api): api.idle()", is_default: true },
+  { behavior_id: 1, name: "Atacar arco", description: "Corre y patea", code: "def on_tick(api): pass", is_default: true, behavior_type: "PLAYER" },
+  { behavior_id: 2, name: "Defender", description: "Se queda atras", code: "def on_tick(api): api.idle()", is_default: true, behavior_type: "COACH" },
 ]
 
 // Comportamiento propio
-const mockCustom = { 
-  behavior_id: 15, 
-  name: "Mi comportamiento", 
-  description: "Una descripción", 
-  code: "def on_tick(api): pass", 
+const mockCustom = {
+  behavior_id: 15,
+  name: "Mi comportamiento",
+  description: "Una descripción",
+  code: "def on_tick(api): pass",
   is_default: false,
+  behavior_type: "PLAYER",
 }
 
 function renderPage() {
@@ -71,6 +72,17 @@ describe("BehaviorListPage", () => {
       expect(screen.getAllByTestId("behavior-card")).toHaveLength(2)
       expect(httpService.get).toHaveBeenCalledWith("/behaviors")
       expect(screen.queryByText(/def on_tick/)).not.toBeInTheDocument()
+    })
+
+    it("Debería mostrar en cada tarjeta el tipo del comportamiento (Jugador o DT)", async () => {
+      httpService.get.mockResolvedValue(mockBehaviors)
+      renderPage()
+
+      const [tarjetaJugador, tarjetaDT] = await screen.findAllByTestId("behavior-card")
+      expect(tarjetaJugador).toHaveTextContent("Atacar arco")
+      expect(tarjetaJugador).toHaveTextContent("Jugador")
+      expect(tarjetaDT).toHaveTextContent("Defender")
+      expect(tarjetaDT).toHaveTextContent("DT")
     })
   })
 

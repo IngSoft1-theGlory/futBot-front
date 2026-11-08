@@ -37,6 +37,13 @@
   overflow-wrap: anywhere;
 }
 
+/* Fila con las etiquetas (tipo y "Por default"), una al lado de la otra */
+.behavior-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .behavior-card__badge {
   align-self: flex-start;
   padding: 0.15rem 0.6rem;
