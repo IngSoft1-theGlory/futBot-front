@@ -254,14 +254,16 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
           {fieldErrors.code && (
             <p className="behavior-form__error" role="alert">{fieldErrors.code}</p>
           )}
-          {/* Reglas del código del comportamiento*/}
+          {/* Reglas del código del comportamiento. La frase del jugador quieto no aplica
+              al DT: lo que pasa si falla el código del DT lo explica su ayuda */}
           <p className="behavior-form__hint">
             El código debe definir una función on_tick(api). No se permiten for, while, import
-            ni comprensiones, y tampoco el texto "__". Si usás algo que no está disponible, el
-            jugador con este comportamiento se quedará quieto durante el partido. Debajo esta
-            la ayuda con lo que sí podés usar.
+            ni comprensiones, y tampoco el texto "__".
+            {behaviorType !== "COACH" && " Si usás algo que no está disponible, el jugador con este comportamiento se quedará quieto durante el partido."}
+            {" "}Debajo esta la ayuda con lo que sí podés usar.
           </p>
-          <BehaviorHelp />
+          {/* La ayuda cambia según el tipo: primitivas de jugador o de DT */}
+          <BehaviorHelp behaviorType={behaviorType} />
         </div>
  
         {/* Error que devolvió el back (o de conexión) al enviar */}
