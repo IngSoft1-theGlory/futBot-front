@@ -229,6 +229,26 @@ describe("BehaviorForm", () => {
       await waitFor(() => expect(guardar()).toBeEnabled())
     })
 
+    // El back rechaza un código que mezcla primitivas de jugador y de DT. El nombre de la
+    // primitiva no importa: la validación es del back, el front solo muestra su mensaje
+    it.each([
+      ["DT", "COACH", "def on_tick(api): api.idle()", "Un comportamiento de DT no puede usar primitivas de jugador"],
+      ["Jugador", "PLAYER", "def on_tick(api): api.primitiva_de_dt()", "Un comportamiento de jugador no puede usar primitivas de DT"],
+    ])("Debería mostrar el error del back y no guardar un %s con primitivas del otro tipo", async (opcion, tipo, codigo, mensaje) => {
+      httpService.post.mockRejectedValue(new ApiError(400, "INVALID_DATA", mensaje))
+      const onSaved = vi.fn()
+      renderCrear(onSaved)
+
+      await userEvent.selectOptions(screen.getByLabelText(/tipo/i), opcion)
+      await completarFormulario({ ...VALID, code: codigo })
+      await userEvent.click(guardar())
+
+      expect(httpService.post).toHaveBeenCalledWith("/behaviors", { ...VALID, code: codigo, behavior_type: tipo })
+      expect(await screen.findByRole("alert")).toHaveTextContent(mensaje)
+      expect(onSaved).not.toHaveBeenCalled()
+      expect(screen.getByLabelText(/código/i)).toHaveValue(codigo)   // el código sigue en el editor
+    })
+
     it("Debería permitir reenviar después de un rechazo del back", async () => {
       const guardado = { behavior_id: 9, ...VALID, is_default: false }
       httpService.post
