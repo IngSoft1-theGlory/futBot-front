@@ -293,4 +293,34 @@ describe("BehaviorForm", () => {
       expect(guardar()).toBeDisabled()
     })
   })
+
+  // El contenido de cada ayuda se prueba en BehaviorHelp.test.jsx; acá solo que el
+  // formulario le pasa el tipo correcto. Se usa una primitiva de cada tipo como muestra
+  describe("Ayuda según el tipo", () => {
+    const PRIMITIVA_JUGADOR = "api.kick_ball(direccion, potencia)"
+    const PRIMITIVA_DT = "api.substitute(player_out_id, player_in_id)"
+    const FRASE_JUGADOR_QUIETO = /se quedará quieto/
+
+    it("Debería mostrar la ayuda del jugador al crear y cambiar a la del DT al elegir DT", async () => {
+      renderCrear()
+
+      expect(screen.getByText(PRIMITIVA_JUGADOR)).toBeInTheDocument()
+      expect(screen.queryByText(PRIMITIVA_DT)).not.toBeInTheDocument()
+      expect(screen.getByText(FRASE_JUGADOR_QUIETO)).toBeInTheDocument()
+
+      await userEvent.selectOptions(screen.getByLabelText(/tipo/i), "DT")
+
+      expect(screen.getByText(PRIMITIVA_DT)).toBeInTheDocument()
+      expect(screen.queryByText(PRIMITIVA_JUGADOR)).not.toBeInTheDocument()
+      expect(screen.queryByText(FRASE_JUGADOR_QUIETO)).not.toBeInTheDocument()
+    })
+
+    it("Debería mostrar la ayuda del DT al editar un comportamiento de DT", async () => {
+      httpService.get.mockResolvedValue(mockBehavior)   // mockBehavior es de tipo COACH
+      renderEditar()
+
+      expect(await screen.findByText(PRIMITIVA_DT)).toBeInTheDocument()
+      expect(screen.queryByText(PRIMITIVA_JUGADOR)).not.toBeInTheDocument()
+    })
+  })
 })

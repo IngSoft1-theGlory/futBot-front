@@ -28,7 +28,20 @@ const GEOMETRY = [
   { code: "vector.normalize()", text: "mismo vector con largo 1" },
 ]
 
-// Una lista con título; la usan las tres secciones de arriba
+// Primitivas del DT (CoachAPI del back). Son distintas a las del jugador.
+const COACH_ACTIONS = [
+  { code: "api.change_behavior(player_id, behavior_id)", text: "cambia el comportamiento de un titular; solo acepta comportamientos de jugador predeterminados o propios" },
+  { code: "api.substitute(player_out_id, player_in_id)", text: "cambia un titular por un suplente; solo durante una pausa y como máximo un cambio por pausa" },
+]
+
+const COACH_READINGS = [
+  { code: "api.get_current_tick()", text: "devuelve el tick (instante) actual del partido" },
+  { code: "api.get_pause_type()", text: "devuelve \"HALF_TIME\" (entretiempo), \"COOLING_BREAK\" (pausa de hidratación) o None si no hay pausa" },
+  { code: "api.get_starters()", text: "lista con los ids de tus titulares, en orden de alineación" },
+  { code: "api.get_substitutes()", text: "lista con los ids de tus suplentes, en orden de alineación" },
+]
+
+// Una lista con título; la usan las secciones de las dos ayudas
 function HelpList({ title, items }) {
   return (
     <>
@@ -44,11 +57,10 @@ function HelpList({ title, items }) {
   )
 }
 
-function BehaviorHelp() {
+// Ayuda para un comportamiento de jugador (la de siempre)
+function PlayerHelp() {
   return (
-    <details className="behavior-help">
-      <summary>Ayuda: ¿qué puedo usar en el código?</summary>
-
+    <>
       <HelpList title="Métodos de api" items={API_METHODS} />
       <HelpList title="Estado del juego (gs = api.get_game_state())" items={GAME_STATE} />
       <HelpList title="Puntos y vectores" items={GEOMETRY} />
@@ -64,6 +76,37 @@ function BehaviorHelp() {
 
       <h3 className="behavior-help__title">La cancha</h3>
       <p>Mide 105 por 60 metros: x va de 0 a 105 e y va de 0 a 60.</p>
+    </>
+  )
+}
+
+// Ayuda para un comportamiento de DT: solo sus primitivas y sus reglas
+function CoachHelp() {
+  return (
+    <>
+      <HelpList title="Primitivas de acción" items={COACH_ACTIONS} />
+      <HelpList title="Primitivas de lectura" items={COACH_READINGS} />
+
+      <h3 className="behavior-help__title">A tener en cuenta</h3>
+      <ul>
+        <li>Igual que un jugador, el DT define <code>on_tick(api)</code>, sin bucles ni imports.</li>
+        <li>Si el código falla o no carga, el partido se juega igual y no se avisa.</li>
+        <li>Si editás un DT, los cambios rigen desde el próximo partido.</li>
+      </ul>
+    </>
+  )
+}
+
+/*
+ Props:
+   behaviorType: "PLAYER" o "COACH". Con "COACH" se muestra la ayuda del DT;
+                 con cualquier otro valor (o sin valor), la del jugador.
+*/
+function BehaviorHelp({ behaviorType }) {
+  return (
+    <details className="behavior-help">
+      <summary>Ayuda: ¿qué puedo usar en el código?</summary>
+      {behaviorType === "COACH" ? <CoachHelp /> : <PlayerHelp />}
     </details>
   )
 }
