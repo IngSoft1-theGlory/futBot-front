@@ -36,12 +36,30 @@ function groupMatchesByRound(fixture) {
   return groups
 }
 
+/*
+ true si el partido se definio por penales (vienen los penales de los dos equipos)
+ phome y paway llegan en null si no hubo penales, o pueden no venir (undefined)
+ "!= null" descarta los dos casos a la vez, se compara con null y no se usa solo el valor,
+ porque 0 penales convertidos tambien es un resultado valido
+*/
+function hasPenalties(score) {
+  return score.phome != null && score.paway != null
+}
+
 // el marcador se muestra cuando el partido termino, antes se muestra "vs"
+// si hubo penales van afuera de los goles, los del local a la izquierda: (2) 0 - 0 (1)
 function getScoreText(match) {
-  if (match.status === "FINISHED") {
-    return `${match.score.home} - ${match.score.away}`
+  if (match.status !== "FINISHED") {
+    return "vs"
   }
-  return "vs"
+
+  const score = match.score
+  const goalsText = `${score.home} - ${score.away}`
+
+  if (hasPenalties(score)) {
+    return `(${score.phome}) ${goalsText} (${score.paway})`
+  }
+  return goalsText
 }
 
 // true si el equipo del usuario juega este partido (de local o de visitante)
