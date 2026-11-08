@@ -3,8 +3,9 @@ import { fetchLeagues, LEAGUE_LIMIT_DEFAULT } from "../services/leagues"
 import { useGlobalEvent } from "./useGlobalEvent"
 
 const LEAGUE_CREATED = "LEAGUE_CREATED"
+const LEAGUE_CANCELLED = "LEAGUE_CANCELLED"
 /*
- trae las ligas disponibles de la pagina y permite cambiar de pagina, cuando alguien crea una liga (evento LEAGUE_CREATED) vuelve a pedir la lista
+ trae las ligas disponibles de la pagina y permite cambiar de pagina, cuando alguien crea o cancela una liga (eventos LEAGUE_CREATED y LEAGUE_CANCELLED) vuelve a pedir la lista
 */
 export function useLeagues(limit = LEAGUE_LIMIT_DEFAULT) {
   const [page, setPage] = useState(1)
@@ -29,6 +30,7 @@ export function useLeagues(limit = LEAGUE_LIMIT_DEFAULT) {
   }, [load])
 
   useGlobalEvent(LEAGUE_CREATED, load)
+  useGlobalEvent(LEAGUE_CANCELLED, load)
 
   return {
     leagues,

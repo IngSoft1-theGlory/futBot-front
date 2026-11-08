@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useLeagues } from "../../hooks/useLeagues"
@@ -6,11 +7,21 @@ import { isLeagueFull } from "../../services/leagues"
 import "../FriendlyListPage/FriendlyListPage.css"
 import "./LeagueListPage.css"
 
+// El aviso que llega de otra pantalla (ej: la liga fue cancelada) se ve unos segundos y desaparece
+const NOTICE_DURATION_MS = 5000
+
 function LeagueListPage() {
   const { leagues, isLoading, error, page, hasNextPage, goToPreviousPage, goToNextPage } = useLeagues()
   const navigate = useNavigate()
   const { state } = useLocation()
-  const notice = state?.message // aviso al volver de otra pantalla (ej: la liga ya no existe)
+  // aviso al volver de otra pantalla (ej: la liga ya no existe o fue cancelada)
+  const [notice, setNotice] = useState(state?.message ?? "")
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(""), NOTICE_DURATION_MS)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   // privada: primero se verifica la contraseña, publica: directo a la inscripcion
   function onSelectLeague(league) {

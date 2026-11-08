@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, cleanup, waitFor } from "@testing-library/react"
+import { render, screen, cleanup, waitFor, act } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
@@ -8,7 +8,15 @@ vi.mock("../../services/leagues", async () => {
   const actual = await vi.importActual("../../services/leagues")
   return { ...actual, fetchLeagues: vi.fn() }
 })
-vi.mock("../../services/globalSocket", () => ({ subscribe: vi.fn(() => () => {}) }))
+// Guarda los listeners para poder emitir eventos desde los tests
+const mockListeners = new Map()
+vi.mock("../../services/globalSocket", () => ({
+  subscribe: vi.fn((eventName, listener) => {
+    if (!mockListeners.has(eventName)) mockListeners.set(eventName, new Set())
+    mockListeners.get(eventName).add(listener)
+    return () => mockListeners.get(eventName)?.delete(listener)
+  }),
+}))
 
 import { fetchLeagues } from "../../services/leagues"
 import LeagueListPage from "./LeagueListPage"
@@ -17,9 +25,10 @@ const PUBLICA = { leagueId: 1, leagueName: "Liga Pública", teamsCurrent: 2, max
 const PRIVADA = { leagueId: 2, leagueName: "Liga Privada", teamsCurrent: 3, maxTeams: 4, isPrivate: true }
 const LLENA = { leagueId: 3, leagueName: "Liga Llena", teamsCurrent: 4, maxTeams: 4, isPrivate: false }
 
-function renderPage() {
+// state: lo que manda otra pantalla al navegar al listado (ej: { message })
+function renderPage(state) {
   return render(
-    <MemoryRouter initialEntries={["/leagues"]}>
+    <MemoryRouter initialEntries={[{ pathname: "/leagues", state }]}>
       <Routes>
         <Route path="/leagues" element={<LeagueListPage />} />
         <Route path="/leagues/new" element={<h1>Crear liga</h1>} />
@@ -33,8 +42,32 @@ function renderPage() {
 describe("LeagueListPage", () => {
   beforeEach(() => {
     fetchLeagues.mockReset()
+    mockListeners.clear()
   })
   afterEach(cleanup)
+
+  it("Debería dejar de mostrar la liga cancelada al llegar LEAGUE_CANCELLED, sin recargar", async () => {
+    fetchLeagues.mockResolvedValueOnce([PUBLICA, PRIVADA]).mockResolvedValueOnce([PRIVADA])
+    renderPage()
+    expect(await screen.findByText("Liga Pública")).toBeTruthy()
+
+    act(() => mockListeners.get("LEAGUE_CANCELLED").forEach((listener) => listener({ league_id: 1 })))
+
+    await waitFor(() => expect(screen.queryByText("Liga Pública")).toBeNull())
+    expect(screen.getByText("Liga Privada")).toBeTruthy()
+  })
+
+  it("Debería mostrar el aviso de cancelación por unos segundos", async () => {
+    vi.useFakeTimers()
+    fetchLeagues.mockResolvedValue([])
+    renderPage({ message: "La liga fue cancelada por el anfitrión." })
+    expect(screen.getByText("La liga fue cancelada por el anfitrión.")).toBeTruthy()
+
+    act(() => vi.advanceTimersByTime(5000))
+
+    expect(screen.queryByText("La liga fue cancelada por el anfitrión.")).toBeNull()
+    vi.useRealTimers()
+  })
 
   it("muestra nombre, cupo y tipo de cada liga", async () => {
     fetchLeagues.mockResolvedValue([PUBLICA, PRIVADA])
