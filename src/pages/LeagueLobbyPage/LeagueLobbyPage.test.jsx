@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup, act, fireEvent, within } from "@testing-library/react"
-import { MemoryRouter, Routes, Route } from "react-router-dom"
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom"
 
 vi.mock("../../services/createhttpService", async (importOriginal) => {
   const original = await importOriginal()
@@ -118,6 +118,17 @@ function armarEquipos(n) {
 
 // ---------- Helpers ----------
 
+// Listado de ligas falso: muestra el aviso que le manda el lobby al navegar
+function ListaDeLigas() {
+  const { state } = useLocation()
+  return (
+    <>
+      <h1>Lista de Ligas</h1>
+      {state?.message && <p>{state.message}</p>}
+    </>
+  )
+}
+
 function renderPage(leagueId = "3") {
   return render(
     <MemoryRouter initialEntries={[`/leagues/${leagueId}`]}>
@@ -125,7 +136,7 @@ function renderPage(leagueId = "3") {
         <Route path="/leagues/:leagueId" element={<LeagueLobbyPage />} />
         <Route path="/leagues/:leagueId/lineup" element={<h1>Editar alineación de la liga</h1>} />
         <Route path="/" element={<h1>Pantalla principal</h1>} />
-        <Route path="/leagues" element={<h1>Lista de Ligas</h1>} />
+        <Route path="/leagues" element={<ListaDeLigas />} />
       </Routes>
     </MemoryRouter>
   )
@@ -333,6 +344,30 @@ describe("LeagueLobbyPage", () => {
       expect(httpService.get).toHaveBeenCalledTimes(2)
       expect(screen.getByText("BocaJuniors")).toBeTruthy()
       expect(screen.queryByRole("alert")).toBeNull()
+    })
+  })
+
+  describe("Liga cancelada", () => {
+    it.each([
+      ["un participante", USUARIO_INVITADO],
+      ["el anfitrión", USUARIO_ANFITRION],
+    ])("Debería llevar a %s a la lista de ligas con el aviso cuando cancelan esta liga", async (_caso, user) => {
+      mockUser = user
+      await abrirLobby()
+
+      await emitirEvento("LEAGUE_CANCELLED", { league_id: 3 })
+
+      expect(screen.getByText("Lista de Ligas")).toBeTruthy()
+      expect(screen.getByText("La liga fue cancelada por el anfitrión.")).toBeTruthy()
+    })
+
+    it("Debería ignorar LEAGUE_CANCELLED de otras ligas, sin volver a pedir la liga", async () => {
+      await abrirLobby()
+
+      await emitirEvento("LEAGUE_CANCELLED", { league_id: 999 })
+
+      expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
+      expect(httpService.get).toHaveBeenCalledTimes(1)
     })
   })
 
