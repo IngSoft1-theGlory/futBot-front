@@ -11,6 +11,7 @@ const BOTON_ACCEDER = "Acceder al partido"
 
 // Arma un partido del fixture tal como lo manda el backend.
 // cambios: campos a reemplazar, por ejemplo { status: "FINISHED" }
+// phome y paway (penales del local y del visitante) quedan en null: así llegan si no hubo penales
 function armarPartido({
   match_id = 21,
   round = 1,
@@ -21,6 +22,8 @@ function armarPartido({
   team_away_name = "Rival FC",
   home_goals = 0,
   away_goals = 0,
+  phome = null,
+  paway = null,
 } = {}) {
   return {
     match_id,
@@ -28,7 +31,7 @@ function armarPartido({
     status,
     team_host: { team_id: team_host_id, team_name: team_host_name },
     team_away: { team_id: team_away_id, team_name: team_away_name },
-    score: { home: home_goals, away: away_goals },
+    score: { home: home_goals, away: away_goals, phome, paway },
   }
 }
 
@@ -127,6 +130,46 @@ describe("Fixture", () => {
 
         expect(screen.getByText("vs")).toBeInTheDocument()
         expect(screen.queryByText("1 - 0")).not.toBeInTheDocument()
+      }
+    )
+  })
+
+  describe("Resultado con penales", () => {
+    it("Debería mostrar los penales afuera del marcador, los del local a la izquierda", () => {
+      renderFixture([
+        armarPartido({ status: "FINISHED", home_goals: 0, away_goals: 0, phome: 2, paway: 1 }),
+      ])
+
+      expect(screen.getByText("(2) 0 - 0 (1)")).toBeInTheDocument()
+    })
+
+    it.each([
+      ["el local", { phome: 0, paway: 3 }, "(0) 1 - 1 (3)"],
+      ["el visitante", { phome: 4, paway: 0 }, "(4) 1 - 1 (0)"],
+    ])("Debería mostrar los penales aunque %s no haya convertido ninguno", (_equipo, penales, texto) => {
+      renderFixture([armarPartido({ status: "FINISHED", home_goals: 1, away_goals: 1, ...penales })])
+
+      expect(screen.getByText(texto)).toBeInTheDocument()
+    })
+
+    it.each([
+      ["vienen en null", { home: 1, away: 1, phome: null, paway: null }],
+      ["no vienen", { home: 1, away: 1 }],
+      ["vienen incompletos (solo los del local)", { home: 1, away: 1, phome: 2, paway: null }],
+    ])("Debería mostrar solo los goles si los penales %s", (_descripcion, score) => {
+      // se reemplaza el score entero para poder armar uno sin phome ni paway
+      renderFixture([{ ...armarPartido({ status: "FINISHED" }), score }])
+
+      expect(screen.getByText("1 - 1")).toBeInTheDocument()
+    })
+
+    it.each(["PENDING", "IN_PROGRESS"])(
+      "Debería mostrar \"vs\" aunque vengan penales si el partido está %s",
+      (status) => {
+        renderFixture([armarPartido({ status, home_goals: 1, away_goals: 1, phome: 2, paway: 1 })])
+
+        expect(screen.getByText("vs")).toBeInTheDocument()
+        expect(screen.queryByText("(2) 1 - 1 (1)")).not.toBeInTheDocument()
       }
     )
   })
