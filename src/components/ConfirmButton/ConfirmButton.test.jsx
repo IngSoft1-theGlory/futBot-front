@@ -83,6 +83,25 @@ describe("ConfirmButton", () => {
     expect(onConfirm).not.toHaveBeenCalled()
   })
 
+  it("Debería impedir confirmar si el botón se deshabilita con la confirmación abierta", async () => {
+    const user = userEvent.setup()
+    const onConfirm = vi.fn()
+    const props = { label: LABEL, confirmMessage: MESSAGE, onConfirm }
+    const { rerender } = render(<ConfirmButton {...props} />)
+
+    await user.click(screen.getByRole("button", { name: LABEL }))
+    // Con la confirmación abierta, la pantalla que lo usa lo deshabilita (ej: empezó otra acción)
+    rerender(<ConfirmButton {...props} disabled />)
+
+    const confirmButton = screen.getByRole("button", { name: "Confirmar" })
+    expect(confirmButton).toBeDisabled()
+    await user.click(confirmButton)
+    expect(onConfirm).not.toHaveBeenCalled()
+
+    // "Cancelar" sigue disponible para cerrar la confirmación
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled()
+  })
+
   it("Debería impedir abrir la confirmación mientras está cargando", async () => {
     const { user, onConfirm } = renderConfirmButton({ isLoading: true })
 
