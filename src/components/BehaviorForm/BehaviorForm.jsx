@@ -173,24 +173,27 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
   }
  
   const isCodeTooLong = code.length > MAX_CODE_LENGTH
+  // Texto del tipo ("Jugador" o "DT"). Queda undefined si el back no mandó el tipo
+  const behaviorTypeLabel = BEHAVIOR_TYPE_LABELS[behaviorType]
   return (
     <section className="behavior-form">
       <h2 className="behavior-form__title">
         {isEditing ? "Editar comportamiento" : "Crear comportamiento"}
       </h2>
- 
+
+      {/* Al editar el tipo no se puede cambiar: se muestra como texto, sin campo.
+          Si el back no mandó el tipo, no se muestra nada (mejor que una línea vacía) */}
+      {isEditing && behaviorTypeLabel && (
+        <p className="behavior-form__type">
+          Tipo: <strong>{behaviorTypeLabel}</strong>
+        </p>
+      )}
+
       <form onSubmit={handleSubmit}>
-        {/* Tipo: al crear se elige; al editar solo se muestra (no se puede cambiar) */}
-        <div className="behavior-form__field">
-          <label htmlFor="behavior-type">Tipo:</label>
-          {isEditing ? (
-            <input
-              id="behavior-type"
-              type="text"
-              value={BEHAVIOR_TYPE_LABELS[behaviorType]}
-              readOnly
-            />
-          ) : (
+        {/* Tipo: solo al crear se elige con el desplegable */}
+        {!isEditing && (
+          <div className="behavior-form__field">
+            <label htmlFor="behavior-type">Tipo:</label>
             <select
               id="behavior-type"
               value={behaviorType}
@@ -199,8 +202,8 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
               <option value="PLAYER">{BEHAVIOR_TYPE_LABELS.PLAYER}</option>
               <option value="COACH">{BEHAVIOR_TYPE_LABELS.COACH}</option>
             </select>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Nombre */}
         <div className="behavior-form__field">

@@ -85,10 +85,16 @@
   outline-offset: 2px;
 }
 
-/* Campo de solo lectura (el tipo al editar): letra más apagada para que se note que no se edita */
-.behavior-form__field input[readonly] {
+/* Tipo del comportamiento al editar: texto debajo del título, sin campo */
+.behavior-form__type {
+  margin: 0;
+  font-size: 0.95rem;
   color: #94a3b8;
-  cursor: default;
+}
+
+/* El tipo ("DT" o "Jugador") resaltado para que se lea de un vistazo */
+.behavior-form__type strong {
+  color: #f8fafc;
 }
 
 /* Contenedor del editor de código (CodeMirror) */

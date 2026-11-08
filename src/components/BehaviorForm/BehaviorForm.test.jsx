@@ -152,19 +152,17 @@ describe("BehaviorForm", () => {
       await waitFor(() => expect(onSaved).toHaveBeenCalledWith(editado))
     })
 
-    it("Debería mostrar el tipo guardado como solo lectura, sin poder cambiarlo, y no enviarlo en el PUT", async () => {
+    it("Debería mostrar el tipo guardado como texto, sin ningún campo para cambiarlo, y no enviarlo en el PUT", async () => {
       httpService.get.mockResolvedValue(mockBehavior)
       httpService.put.mockResolvedValue(mockBehavior)
       renderEditar()
 
-      const tipo = await screen.findByLabelText(/tipo/i)
-      expect(tipo).toHaveValue("DT")                         // el tipo que vino del back, no el de por defecto
-      expect(tipo).toHaveAttribute("readonly")
-      expect(screen.queryByRole("combobox")).not.toBeInTheDocument()   // no hay desplegable para elegir otro
-
-      // Intentar escribir en un campo de solo lectura no cambia nada
-      await userEvent.type(tipo, "Jugador")
-      expect(tipo).toHaveValue("DT")
+      // El tipo que vino del back (DT), no el de por defecto (Jugador)
+      expect(await screen.findByText("DT")).toBeInTheDocument()
+      expect(screen.getByText(/tipo:/i)).toBeInTheDocument()
+      // No hay campo del tipo: ni desplegable ni caja de texto
+      expect(screen.queryByLabelText(/tipo/i)).not.toBeInTheDocument()
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument()
 
       await userEvent.click(guardar())
 
@@ -172,6 +170,17 @@ describe("BehaviorForm", () => {
       const [, bodyEnviado] = httpService.put.mock.calls[0]
       expect(bodyEnviado).toEqual(VALID)                     // solo nombre, descripción y código
       expect(bodyEnviado).not.toHaveProperty("behavior_type")
+    })
+
+    it("No debería mostrar la línea del tipo si el back no mandó behavior_type", async () => {
+      const { behavior_type: _sinTipo, ...comportamientoSinTipo } = mockBehavior
+      httpService.get.mockResolvedValue(comportamientoSinTipo)
+      renderEditar()
+
+      await screen.findByLabelText(/nombre/i)   // espera a que termine la carga
+
+      expect(screen.queryByText(/tipo:/i)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/tipo/i)).not.toBeInTheDocument()
     })
 
     it("Debería mostrar el error de carga y permitir volver si el comportamiento no existe", async () => {
