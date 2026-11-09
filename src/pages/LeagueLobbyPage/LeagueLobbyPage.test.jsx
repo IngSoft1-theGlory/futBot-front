@@ -410,6 +410,33 @@ describe("LeagueLobbyPage", () => {
     })
   })
 
+  describe("Volver al inicio", () => {
+    it("Debería volver a la pantalla principal desde la sala de espera", async () => {
+      await abrirLobby()
+
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+
+    it("Debería volver a la pantalla principal también con la liga en curso", async () => {
+      await abrirLigaEnCurso()
+
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+
+    it("Debería poder volver al inicio el anfitrión, que no tiene el botón de abandonar", async () => {
+      await abrirComoAnfitrion()
+
+      expect(screen.queryByRole("button", { name: "Abandonar liga" })).toBeNull()
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+  })
+
   describe("Liga en curso", () => {
     it("Debería volver a pedir la liga cuando empieza un partido de su fixture", async () => {
       await abrirLigaEnCurso()
