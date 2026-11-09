@@ -87,14 +87,18 @@ function useLeagueLobby(leagueId) {
   useGlobalEvent("LEAGUE_INITIATED", handleLobbyEvent)
   useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
 
-  return { league, status, error, refetchLeague }
+  function setCoachBehaviorId(behaviorId) {
+    setLeague((prev) => ({ ...prev, coach_behavior_id: behaviorId }))
+  }
+
+  return { league, status, error, refetchLeague, setCoachBehaviorId }
 }
 
 function LeagueLobbyPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
   const { user } = useSession()
-  const { league, status, error, refetchLeague } = useLeagueLobby(leagueId)
+  const { league, status, error, refetchLeague, setCoachBehaviorId } = useLeagueLobby(leagueId)
 
   const [isLeaving, setIsLeaving] = useState(false)
   const [leaveError, setLeaveError] = useState(null)
@@ -236,7 +240,12 @@ function LeagueLobbyPage() {
           )}
         </>
       ) : (
-        <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
+        <LeagueInProgressView 
+          league={league} 
+          teamId={user?.team_id} 
+          isMember={isMember} 
+          onCoachChanged={setCoachBehaviorId}
+        />
       )}
     </main>
   )

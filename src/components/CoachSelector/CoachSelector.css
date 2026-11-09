@@ -1,0 +1,112 @@
+/* ==========================================================
+   Selector del DT de la liga en curso. Misma tarjeta que el
+   bloque "Editar alineación" de LeagueInProgressView.css.
+   ========================================================== */
+
+.coach-selector {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: var(--lobby-width);
+  padding: 1rem 1.75rem;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.coach-selector__title {
+  margin: 0;
+  text-align: left;
+  font-size: 1.15rem;
+  color: #f8fafc;
+}
+
+.coach-selector__current {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #f8fafc;
+}
+
+.coach-selector__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c7d2fe;
+}
+
+.coach-selector__link {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+/* Etiqueta, selector y botón en una fila */
+.coach-selector__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.coach-selector__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.coach-selector__select {
+  flex: 1 1 200px;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+}
+
+.coach-selector__select:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+.coach-selector__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mensajes de éxito y de error */
+.coach-selector__success,
+.coach-selector__error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.coach-selector__success {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.coach-selector__error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+@media (max-width: 480px) {
+  .coach-selector {
+    padding: 1.25rem 1rem;
+  }
+
+  .coach-selector__form .btn {
+    width: 100%;
+  }
+}
