@@ -284,6 +284,11 @@ function LeagueLobbyPage() {
       ) : (
         <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
       )}
+
+      {/* Visible en todos los estados del lobby (sala de espera, en curso y finalizada) */}
+      <Link to="/" className="league-lobby__back">
+        Volver al Inicio
+      </Link>
     </main>
   )
 }

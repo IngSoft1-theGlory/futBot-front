@@ -107,6 +107,10 @@ function FriendlyLobby() {
           )}
         </div>
       </section>
+
+      <Link to="/" className="friendly-lobby__back">
+        Volver al Inicio
+      </Link>
     </main>
   )
 }

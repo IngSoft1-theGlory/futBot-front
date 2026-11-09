@@ -146,6 +146,20 @@
   font-size: 0.9rem;
 }
 
+/* Link para volver al inicio.
+   Se escribe como ".league-lobby .league-lobby__back" para ganarle en especificidad
+   a ".league-lobby a", que si no pisaría el color */
+.league-lobby .league-lobby__back {
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+}
+
+.league-lobby .league-lobby__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
 /* Botón abandonar */
 .league-lobby__leave {
   padding: 0.7rem 1.5rem;
