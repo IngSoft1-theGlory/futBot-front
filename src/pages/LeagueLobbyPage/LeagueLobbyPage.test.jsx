@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup, act, fireEvent, within } from "@testing-library/react"
-import { MemoryRouter, Routes, Route } from "react-router-dom"
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom"
 
 // CoachSelector pide /behaviors al montarse: se simula para que httpService.get cuente solo los pedidos de la liga
 vi.mock("../../services/behaviors", async (importOriginal) => ({
@@ -125,6 +125,17 @@ function armarEquipos(n) {
 
 // ---------- Helpers ----------
 
+// Listado de ligas falso: muestra el aviso que le manda el lobby al navegar
+function ListaDeLigas() {
+  const { state } = useLocation()
+  return (
+    <>
+      <h1>Lista de Ligas</h1>
+      {state?.message && <p>{state.message}</p>}
+    </>
+  )
+}
+
 function renderPage(leagueId = "3") {
   return render(
     <MemoryRouter initialEntries={[`/leagues/${leagueId}`]}>
@@ -132,7 +143,7 @@ function renderPage(leagueId = "3") {
         <Route path="/leagues/:leagueId" element={<LeagueLobbyPage />} />
         <Route path="/leagues/:leagueId/lineup" element={<h1>Editar alineación de la liga</h1>} />
         <Route path="/" element={<h1>Pantalla principal</h1>} />
-        <Route path="/leagues" element={<h1>Lista de Ligas</h1>} />
+        <Route path="/leagues" element={<ListaDeLigas />} />
       </Routes>
     </MemoryRouter>
   )
@@ -170,6 +181,12 @@ async function abrirLigaEnCurso() {
 // Abandonar la liga lleva dos clicks: Primero "Abandonar liga" y luego "Confirmar"
 function abandonarLiga() {
   fireEvent.click(screen.getByRole("button", { name: "Abandonar liga" }))
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar" }))
+}
+
+// Cancelar la liga también lleva dos clicks: Primero "Cancelar liga" y luego "Confirmar"
+function cancelarLiga() {
+  fireEvent.click(screen.getByRole("button", { name: "Cancelar liga" }))
   fireEvent.click(screen.getByRole("button", { name: "Confirmar" }))
 }
 
@@ -347,6 +364,30 @@ describe("LeagueLobbyPage", () => {
     })
   })
 
+  describe("Liga cancelada", () => {
+    it.each([
+      ["un participante", USUARIO_INVITADO],
+      ["el anfitrión", USUARIO_ANFITRION],
+    ])("Debería llevar a %s a la lista de ligas con el aviso cuando cancelan esta liga", async (_caso, user) => {
+      mockUser = user
+      await abrirLobby()
+
+      await emitirEvento("LEAGUE_CANCELLED", { league_id: 3 })
+
+      expect(screen.getByText("Lista de Ligas")).toBeTruthy()
+      expect(screen.getByText("La liga fue cancelada por el anfitrión.")).toBeTruthy()
+    })
+
+    it("Debería ignorar LEAGUE_CANCELLED de otras ligas, sin volver a pedir la liga", async () => {
+      await abrirLobby()
+
+      await emitirEvento("LEAGUE_CANCELLED", { league_id: 999 })
+
+      expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
+      expect(httpService.get).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe("Pantalla de la liga en curso", () => {
     it("Debería mostrar la tabla de posiciones, el fixture y el botón para editar la alineación", async () => {
       await abrirLigaEnCurso()
@@ -438,6 +479,33 @@ describe("LeagueLobbyPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Confirmar" }))
 
       expect(await screen.findByText("DT ofensivo", { selector: "strong" })).toBeTruthy()
+    })
+  })
+
+  describe("Volver al inicio", () => {
+    it("Debería volver a la pantalla principal desde la sala de espera", async () => {
+      await abrirLobby()
+
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+
+    it("Debería volver a la pantalla principal también con la liga en curso", async () => {
+      await abrirLigaEnCurso()
+
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+
+    it("Debería poder volver al inicio el anfitrión, que no tiene el botón de abandonar", async () => {
+      await abrirComoAnfitrion()
+
+      expect(screen.queryByRole("button", { name: "Abandonar liga" })).toBeNull()
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
     })
   })
 
@@ -674,6 +742,125 @@ describe("LeagueLobbyPage", () => {
       expect(alerta.textContent).toBe("La liga ya está iniciada")
       expect(await screen.findByText("En curso")).toBeTruthy()
       expect(httpService.get).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe("Cancelar liga", () => {
+    it.each([
+      { caso: "es el anfitrión y la liga está pendiente", user: USUARIO_ANFITRION, status: "PENDING", accion: "mostrar", visible: true },
+      { caso: "es un invitado", user: USUARIO_INVITADO, status: "PENDING", accion: "ocultar", visible: false },
+      { caso: "la liga ya está en curso", user: USUARIO_ANFITRION, status: "IN_PROGRESS", accion: "ocultar", visible: false },
+    ])("Debería $accion el botón 'Cancelar liga' si $caso", async ({ user, status, visible }) => {
+      mockUser = user
+      httpService.get.mockResolvedValue({ ...armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]), status })
+      renderPage()
+      await screen.findByText("Liga FAMAF Apertura")
+
+      const boton = screen.queryByRole("button", { name: "Cancelar liga" })
+      expect(boton !== null).toBe(visible)
+    })
+
+    it("Debería seguir mostrando 'Abandonar liga' al invitado", async () => {
+      await abrirLobby()
+
+      expect(screen.getByRole("button", { name: "Abandonar liga" })).toBeTruthy()
+      expect(screen.queryByRole("button", { name: "Cancelar liga" })).toBeNull()
+    })
+
+    it("Debería pedir confirmación y no llamar al servidor si el anfitrión la rechaza", async () => {
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar liga" }))
+      expect(screen.getByText("¿Seguro que querés cancelar la liga?")).toBeTruthy()
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+
+      expect(httpService.delete).not.toHaveBeenCalled()
+      expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Cancelar liga" })).toBeTruthy()
+    })
+
+    it("Debería enviar el DELETE con el id de la liga y volver a la lista de ligas cuando el servidor responde 204", async () => {
+      // httpService devuelve null cuando la respuesta es 204 No Content
+      httpService.delete.mockResolvedValue(null)
+      await abrirComoAnfitrion(4)
+
+      cancelarLiga()
+
+      expect(await screen.findByText("Lista de Ligas")).toBeTruthy()
+      expect(httpService.delete).toHaveBeenCalledWith("/leagues/3")
+      expect(httpService.delete).toHaveBeenCalledTimes(1)
+    })
+
+    it("Debería deshabilitar 'Cancelar liga' e 'Iniciar liga' mientras la cancelación está en curso", async () => {
+      httpService.delete.mockReturnValue(new Promise(() => {}))
+      await abrirComoAnfitrion(4)
+
+      cancelarLiga()
+
+      const botonCancelar = await screen.findByRole("button", { name: "Cancelando..." })
+      expect(botonCancelar.disabled).toBe(true)
+      expect(screen.getByRole("button", { name: "Iniciar liga" }).disabled).toBe(true)
+    })
+
+    it("Debería deshabilitar 'Cancelar liga' mientras la liga se está iniciando", async () => {
+      httpService.put.mockReturnValue(new Promise(() => {}))
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      await screen.findByRole("button", { name: "Iniciando..." })
+      expect(screen.getByRole("button", { name: "Cancelar liga" }).disabled).toBe(true)
+    })
+
+    it("Debería impedir confirmar la cancelación si la liga empezó a iniciarse con la confirmación abierta", async () => {
+      httpService.put.mockReturnValue(new Promise(() => {}))
+      await abrirComoAnfitrion(4)
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar liga" }))
+      fireEvent.click(screen.getByRole("button", { name: "Iniciar liga" }))
+
+      const botonConfirmar = await screen.findByRole("button", { name: "Confirmar" })
+      expect(botonConfirmar.disabled).toBe(true)
+
+      fireEvent.click(botonConfirmar)
+      expect(httpService.delete).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      {
+        caso: "la liga ya empezó (409)",
+        error: new ApiError(409, "LEAGUE_ALREADY_STARTED", "La liga ya comenzó y no se puede cancelar."),
+        mensaje: "La liga ya comenzó y no se puede cancelar.",
+      },
+      {
+        caso: "el usuario no es el anfitrión (403)",
+        error: new ApiError(403, "UNAUTHORIZED_ACTION", "Solo el anfitrión puede cancelar la liga."),
+        mensaje: "Solo el anfitrión puede cancelar la liga.",
+      },
+      {
+        caso: "la liga no existe (404)",
+        error: new ApiError(404, "LEAGUE_NOT_FOUND", "No existe una liga con el ID especificado."),
+        mensaje: "No existe una liga con el ID especificado.",
+      },
+      {
+        caso: "falla por un problema de conexión",
+        error: new TypeError("Failed to fetch"),
+        mensaje: "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.",
+      },
+    ])("Debería mostrar '$mensaje' y seguir en el lobby cuando $caso", async ({ error, mensaje }) => {
+      httpService.delete.mockRejectedValue(error)
+      await abrirComoAnfitrion(4)
+
+      cancelarLiga()
+
+      const alerta = await screen.findByRole("alert")
+      expect(alerta.textContent).toBe(mensaje)
+      expect(screen.getByText("Liga FAMAF Apertura")).toBeTruthy()
+      expect(screen.queryByText("Lista de Ligas")).toBeNull()
+      // Los dos botones vuelven a estar disponibles para reintentar
+      expect(screen.getByRole("button", { name: "Cancelar liga" }).disabled).toBe(false)
+      expect(screen.getByRole("button", { name: "Iniciar liga" }).disabled).toBe(false)
     })
   })
 })

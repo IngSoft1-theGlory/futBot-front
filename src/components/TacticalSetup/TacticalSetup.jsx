@@ -252,8 +252,8 @@ function TacticalSetup({
             Necesitás al menos {minPlayers} jugadores para armar la alineación. Por ahora tenés{" "}
             {players.length}.
           </p>
-          <Link to="/players" className="tactical__link">
-            Ir a mis jugadores →
+          <Link to="/players/createplayer" className="tactical__link">
+            Ir a la creación de jugador →
           </Link>
         </div>
       )

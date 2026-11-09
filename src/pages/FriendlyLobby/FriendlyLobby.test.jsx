@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, cleanup, waitFor, act } from "@testing-library/react"
+import { render, screen, cleanup, waitFor, act, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 vi.mock("../../services/createhttpService", async (importOriginal) => {
@@ -178,6 +178,28 @@ describe("FriendlyLobby", () => {
       await abrirLobby()
 
       expect(screen.queryAllByRole("button")).toHaveLength(0)
+    })
+  })
+
+  describe("Volver al inicio", () => {
+    it("Debería volver a la pantalla principal al hacer clic en el link de la sala de espera", async () => {
+      await abrirLobby()
+
+      fireEvent.click(screen.getByRole("link", { name: "Volver al Inicio" }))
+
+      expect(screen.getByText("Pantalla principal")).toBeTruthy()
+    })
+
+    it("Debería mostrar el link también cuando ya hay un rival esperando", async () => {
+      httpService.get.mockResolvedValue({
+        ...MATCH_SIN_RIVAL,
+        team_away: MATCH_CON_RIVAL.team_away,
+      })
+      renderPage()
+
+      await screen.findByText("BocaJuniors")
+
+      expect(screen.getByRole("link", { name: "Volver al Inicio" })).toBeTruthy()
     })
   })
 
