@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import { useLeagues } from "../../hooks/useLeagues"
-import { isLeagueFull } from "../../services/leagues"
+import { isLeagueFull, isLeagueInProgress } from "../../services/leagues"
 // se reutilizan los estilos del listado de amistosos
 import "../FriendlyListPage/FriendlyListPage.css"
 import "./LeagueListPage.css"
@@ -68,7 +68,8 @@ function LeagueListPage() {
         <ul className="friendly-list">
           {leagues.map((league) => {
             const isFull = isLeagueFull(league)
-            const isBlocked = isFull && !league.isMember
+            const isInProgress = isLeagueInProgress(league)
+            const isBlocked = (isFull || isInProgress) && !league.isMember
             return (
               <li key={league.leagueId}>
                 <button
@@ -79,12 +80,20 @@ function LeagueListPage() {
                 >
                   <span className="friendly-card__teams">
                     {league.isMember && <span className="friendly-card__badge">Miembro</span>}
+                    {isInProgress && league.isMember && (
+                      <span className="friendly-card__badge">En curso</span>
+                    )}
                     {league.leagueName}
                   </span>
                   <span className="friendly-card__meta">
                     <strong>{league.isPrivate ? "Privada" : "Pública"}</strong>
                     <strong>{league.teamsCurrent} / {league.maxTeams}</strong>
-                    {isBlocked && <span className="friendly-card__action">Llena</span>}
+                    {isBlocked && !isInProgress && (
+                      <span className="friendly-card__action">Llena</span>
+                    )}
+                    {isBlocked && isInProgress && (
+                      <span className="friendly-card__action">En curso</span>
+                    )}
                     {!isBlocked && (
                       <span className="friendly-card__action">
                         {league.isMember ? "Ir a la sala" : "Unirme"}
