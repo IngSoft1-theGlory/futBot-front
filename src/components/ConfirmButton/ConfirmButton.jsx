@@ -36,7 +36,8 @@ function ConfirmButton({
     <div className="confirm-button">
       <p className="confirm-button__message">{confirmMessage}</p>
       <div className="confirm-button__actions">
-        <Button variant="primary" onClick={handleConfirm}>
+        {/* Si el botón se deshabilita con la confirmación abierta, tampoco se puede confirmar */}
+        <Button variant="primary" onClick={handleConfirm} disabled={disabled}>
           Confirmar
         </Button>
         <Button variant="danger" onClick={() => setIsConfirming(false)}>

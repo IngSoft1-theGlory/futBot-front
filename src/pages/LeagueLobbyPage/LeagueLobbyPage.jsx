@@ -109,6 +109,8 @@ function LeagueLobbyPage() {
   const [leaveError, setLeaveError] = useState(null)
   const [startError, setStartError] = useState(null)
   const [isInitiating, setIsInitiating] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState(null)
 
   async function handleLeave() {
     setIsLeaving(true)
@@ -142,6 +144,20 @@ function LeagueLobbyPage() {
     }
   }
 
+  // El anfitrión cancela la liga. Si sale bien (204) vuelve al listado, si falla, se queda en el lobby viendo el mensaje que mandó el servidor
+  async function handleCancel() {
+    setIsCancelling(true)
+    setCancelError(null)
+
+    try {
+      await httpService.delete(`/leagues/${leagueId}`)
+      navigate("/leagues", { replace: true })
+    } catch (err) {
+      setCancelError(getErrorsMessages(err))
+      setIsCancelling(false)
+    }
+  }
+
   if (status === "loading") {
     return (
       <main className="league-lobby">
@@ -163,7 +179,8 @@ function LeagueLobbyPage() {
 
   const isHost = league.host_team_id === user?.team_id
   const isMember = league.teams.some((team) => team.team_id === user?.team_id)
-  const canShowStart = isHost && league.status === "PENDING"
+  // Solo el anfitrión, con la liga en PENDING, ve los botones "Iniciar liga" y "Cancelar liga"
+  const canShowHostActions = isHost && league.status === "PENDING"
   const canStart = league.current_teams_count >= 4 && league.current_teams_count % 2 === 0
 
   if (!isMember && league.is_private) return <Navigate to="/leagues" replace />
@@ -196,6 +213,12 @@ function LeagueLobbyPage() {
         </p>
       )}
 
+      {cancelError && (
+        <p className="league-lobby__error" role="alert">
+          {cancelError}
+        </p>
+      )}
+
       {isWaitingRoom ? (
         <>
           <ul className="league-lobby__teams">
@@ -224,25 +247,39 @@ function LeagueLobbyPage() {
             </p>
           )}
 
-          {canShowStart && (
-            <Button
-              onClick={handleStart}
-              isLoading={isInitiating}
-              disabled={!canStart}
-            >
-              {isInitiating ? "Iniciando..." : "Iniciar liga"}
-            </Button>
-          )}
+          <div className="league-lobby__actions">
+            {/* Mientras una solicitud está en curso (iniciar o cancelar), el otro botón queda deshabilitado */}
+            {canShowHostActions && (
+              <Button
+                onClick={handleStart}
+                isLoading={isInitiating}
+                disabled={!canStart || isCancelling}
+              >
+                {isInitiating ? "Iniciando..." : "Iniciar liga"}
+              </Button>
+            )}
 
-          {isMember && !isHost && (
-            <ConfirmButton
-              label={isLeaving ? "Saliendo..." : "Abandonar liga"}
-              confirmMessage="¿Seguro que querés abandonar la liga?"
-              onConfirm={handleLeave}
-              isLoading={isLeaving}
-              variant="danger"
-            />
-          )}
+            {canShowHostActions && (
+              <ConfirmButton
+                label={isCancelling ? "Cancelando..." : "Cancelar liga"}
+                confirmMessage="¿Seguro que querés cancelar la liga?"
+                onConfirm={handleCancel}
+                isLoading={isCancelling}
+                disabled={isInitiating}
+                variant="danger"
+              />
+            )}
+
+            {isMember && !isHost && (
+              <ConfirmButton
+                label={isLeaving ? "Saliendo..." : "Abandonar liga"}
+                confirmMessage="¿Seguro que querés abandonar la liga?"
+                onConfirm={handleLeave}
+                isLoading={isLeaving}
+                variant="danger"
+              />
+            )}
+          </div>
         </>
       ) : (
         <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
