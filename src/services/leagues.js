@@ -21,6 +21,10 @@ export function isLeagueFull(league) {
   return league.teamsCurrent >= league.maxTeams
 }
 
+export function chooseLeagueCoach(leagueId, teamId, behaviorId) {
+  return httpService.put(`/leagues/${leagueId}/teams/${teamId}/coach`, { behavior_id: behaviorId })
+}
+
 // GET /leagues?status=PENDING&page=1&limit=20, el token de sesion lo agrega httpService solo
 export async function fetchLeagues({ page = LEAGUE_PAGE_DEFAULT, limit = LEAGUE_LIMIT_DEFAULT } = {}) {
   const query = new URLSearchParams({ status: LEAGUE_STATUS_PENDING, page, limit })

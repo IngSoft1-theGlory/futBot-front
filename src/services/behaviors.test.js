@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 
 vi.mock("./createhttpService", () => ({ httpService: { get: vi.fn() } }))
 
-import { filterPlayerBehaviors } from "./behaviors"
+import { filterPlayerBehaviors, filterCoachBehaviors } from "./behaviors"
 
 // Lista como la que devuelve GET /behaviors, mezcla comportamientos de jugador y de DT
 const DEFENSIVO = { behavior_id: 1, name: "Defensivo", is_default: true, behavior_type: "PLAYER" }
@@ -23,5 +23,17 @@ describe("filterPlayerBehaviors", () => {
 
   it("Debería devolver una lista vacía si no hay comportamientos", () => {
     expect(filterPlayerBehaviors([])).toEqual([])
+  })
+})
+
+describe("filterCoachBehaviors", () => {
+  it("Debería dejar solo los comportamientos COACH", () => {
+    const result = filterCoachBehaviors([DEFENSIVO, DT_OFENSIVO, MI_DELANTERO, MI_DT])
+    expect(result).toEqual([DT_OFENSIVO, MI_DT])
+  })
+
+  it("Debería devolver una lista vacía si todos los comportamientos son PLAYER", () => {
+    const result = filterCoachBehaviors([DEFENSIVO, MI_DELANTERO])
+    expect(result).toEqual([])
   })
 })

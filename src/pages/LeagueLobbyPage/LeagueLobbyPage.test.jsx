@@ -3,6 +3,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup, act, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom"
 
+// CoachSelector pide /behaviors al montarse: se simula para que httpService.get cuente solo los pedidos de la liga
+vi.mock("../../services/behaviors", async (importOriginal) => ({
+  ...(await importOriginal()),
+  fetchBehaviors: vi.fn(),
+}))
+
 vi.mock("../../services/createhttpService", async (importOriginal) => {
   const original = await importOriginal()
   return { ...original, httpService: { get: vi.fn(), put: vi.fn(), delete: vi.fn() } }
@@ -25,6 +31,7 @@ vi.mock("../../services/globalSocket", () => ({
 }))
 
 import { httpService, ApiError } from "../../services/createhttpService.js"
+import { fetchBehaviors } from "../../services/behaviors.js"
 import LeagueLobbyPage from "./LeagueLobbyPage.jsx"
 
 // ---------- Datos para los tests ----------
@@ -190,6 +197,10 @@ describe("LeagueLobbyPage", () => {
     httpService.get.mockReset()
     httpService.put.mockReset()
     httpService.delete.mockReset()
+    fetchBehaviors.mockReset()
+    fetchBehaviors.mockResolvedValue([
+      { behavior_id: 20, name: "DT ofensivo", behavior_type: "COACH" },
+    ])
     mockListeners.clear()
     mockUser = USUARIO_INVITADO
   })
@@ -413,6 +424,61 @@ describe("LeagueLobbyPage", () => {
       await abrirLigaEnCurso()
 
       expect(screen.queryByRole("button", { name: "Abandonar liga" })).toBeNull()
+    })
+
+    it("Debería mostrar el DT indicado por coach_behavior_id", async () => {
+      mockUser = USUARIO_INVITADO
+      httpService.get.mockResolvedValue(
+        armarLigaEnCurso({ coach_behavior_id: 20 })
+      )
+      renderPage()
+
+      expect(await screen.findByText("DT ofensivo", { selector: "strong" })).toBeTruthy()
+    })
+
+    it.each([
+      {
+        caso: "la liga está en PENDING",
+        user: USUARIO_INVITADO,
+        league: armarLiga([EQUIPO_ANFITRION, EQUIPO_INVITADO]),
+        statusText: "Esperando equipos",
+      },
+      {
+        caso: "el usuario no pertenece a la liga",
+        user: { ...USUARIO_INVITADO, team_id: 99 },
+        league: armarLigaEnCurso({ teams: [EQUIPO_ANFITRION] }),
+        statusText: "En curso",
+      },
+    ])("No debería mostrar el selector si $caso", async ({ user, league, statusText }) => {
+      mockUser = user
+      httpService.get.mockResolvedValue(league)
+      renderPage()
+
+      await screen.findByText(statusText)
+
+      expect(screen.queryByRole("heading", { name: "Director técnico" })).toBeNull()
+    })
+
+    it("Debería mostrar deshabilitado el selector cuando la liga está finalizada", async () => {
+      mockUser = USUARIO_INVITADO
+      httpService.get.mockResolvedValue(armarLigaEnCurso({ status: "FINISHED" }))
+      renderPage()
+
+      expect((await screen.findByRole("combobox")).disabled).toBe(true)
+      expect(screen.getByRole("button", { name: "Confirmar" }).disabled).toBe(true)
+    })
+
+    it("Debería mostrar el nuevo DT en pantalla después de confirmarlo", async () => {
+      mockUser = USUARIO_INVITADO
+      httpService.get.mockResolvedValue(armarLigaEnCurso())
+      httpService.put.mockResolvedValue({ behavior_id: 20 })
+      renderPage()
+
+      const selector = await screen.findByRole("combobox")
+      fireEvent.change(selector, { target: { value: "20" } })
+      fireEvent.click(screen.getByRole("button", { name: "Confirmar" }))
+
+      expect(await screen.findByText("DT ofensivo", { selector: "strong" })).toBeTruthy()
     })
   })
 

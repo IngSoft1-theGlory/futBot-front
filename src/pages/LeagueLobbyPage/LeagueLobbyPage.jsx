@@ -89,14 +89,18 @@ function useLeagueLobby(leagueId) {
   useGlobalEvent("LEAGUE_INITIATED", handleLobbyEvent)
   useLeagueInProgressEvents(leagueId, league?.fixture, refetchLeague)
 
-  return { league, status, error, refetchLeague }
+  function setCoachBehaviorId(behaviorId) {
+    setLeague((prev) => ({ ...prev, coach_behavior_id: behaviorId }))
+  }
+
+  return { league, status, error, refetchLeague, setCoachBehaviorId }
 }
 
 function LeagueLobbyPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
   const { user } = useSession()
-  const { league, status, error, refetchLeague } = useLeagueLobby(leagueId)
+  const { league, status, error, refetchLeague, setCoachBehaviorId } = useLeagueLobby(leagueId)
 
   // Si cancelan esta liga, todos los que están en el lobby (también el anfitrión) vuelven
   // al listado con el aviso. Las cancelaciones de otras ligas se ignoran
@@ -282,7 +286,12 @@ function LeagueLobbyPage() {
           </div>
         </>
       ) : (
-        <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
+        <LeagueInProgressView 
+          league={league} 
+          teamId={user?.team_id} 
+          isMember={isMember} 
+          onCoachChanged={setCoachBehaviorId}
+        />
       )}
 
       {/* Visible en todos los estados del lobby (sala de espera, en curso y finalizada) */}

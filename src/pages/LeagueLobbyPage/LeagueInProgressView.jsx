@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import DataTable from "../../components/DataTable/DataTable"
 import Fixture from "../../components/Fixture/Fixture"
+import CoachSelector from "../../components/CoachSelector/CoachSelector"
 import "./LeagueInProgressView.css"
 
 // Columnas de la tabla de posiciones (campos del ranking de GET /leagues/{leagueId})
@@ -32,8 +33,9 @@ const RANKING_COLUMNS = [
 /*
  Vista de una liga iniciada (en curso o finalizada): tabla de posiciones, fixture
  y, mientras se juega, el acceso a editar la alineación del equipo del usuario.
+ También el selector para asignar un comportamiento DT al equipo.
 */
-function LeagueInProgressView({ league, teamId, isMember }) {
+function LeagueInProgressView({ league, teamId, isMember, onCoachChanged }) {
   const navigate = useNavigate()
   const canEditLineup = isMember && league.status === "IN_PROGRESS"
 
@@ -50,6 +52,16 @@ function LeagueInProgressView({ league, teamId, isMember }) {
         </div>
       )}
 
+      {/* Muestra al miembro de la liga el selector del comportamiento del DT del equipo. */}
+      {isMember && (
+        <CoachSelector
+          leagueId={league.league_id}
+          teamId={teamId}
+          currentCoachId={league.coach_behavior_id ?? null}
+          disabled={league.status !== "IN_PROGRESS"}
+          onChanged={onCoachChanged}
+        />
+      )}
       <section className="league-progress__section" aria-labelledby="league-ranking-title">
         <h2 id="league-ranking-title" className="league-progress__title">
           Tabla de posiciones

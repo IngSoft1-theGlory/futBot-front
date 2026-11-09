@@ -13,3 +13,12 @@ Ejemplo: [Defensivo (PLAYER), Presión alta (COACH)] -> [Defensivo (PLAYER)]
 export function filterPlayerBehaviors(behaviors) {
   return behaviors.filter((behavior) => behavior.behavior_type === "PLAYER")
 }
+
+/*
+Deja solo los comportamientos de DT (behavior_type "COACH"), los de jugador (behavior_type "PLAYER") no se pueden asignar a un DT
+
+Ejemplo: [Defensivo (PLAYER), Presión alta (COACH)] -> [Presión alta (COACH)]
+*/
+export function filterCoachBehaviors(behaviors) {
+  return behaviors.filter((behavior) => behavior.behavior_type === "COACH")
+}
