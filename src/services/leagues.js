@@ -1,6 +1,7 @@
 import { httpService } from "./createhttpService"
 
 export const LEAGUE_STATUS_PENDING = "PENDING"
+export const LEAGUE_STATUS_IN_PROGRESS = "IN_PROGRESS"
 export const LEAGUE_PAGE_DEFAULT = 1
 export const LEAGUE_LIMIT_DEFAULT = 20
 
@@ -13,6 +14,7 @@ function leagueMapping(league) {
     maxTeams: league.max_teams,
     isPrivate: league.is_private,
     isMember: league.is_member,
+    status: league.status,
   }
 }
 
