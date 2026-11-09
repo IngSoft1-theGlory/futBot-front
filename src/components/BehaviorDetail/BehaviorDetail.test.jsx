@@ -60,6 +60,7 @@ describe("BehaviorDetail", () => {
       const { container } = renderDetail()
 
       expect(await screen.findByRole("heading", { name: "Atacar arco" })).toBeInTheDocument()
+      expect(screen.getByText("ID: 7")).toBeInTheDocument()
       expect(screen.getByText(mockBehavior.description)).toBeInTheDocument()
       expect(screen.getByText("Por default")).toBeInTheDocument()
       expect(container.querySelector("pre").textContent).toBe(CODE)   // con los espacios y saltos de línea

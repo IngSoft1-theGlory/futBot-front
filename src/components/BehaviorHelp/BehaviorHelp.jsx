@@ -9,6 +9,15 @@ const API_METHODS = [
   { code: "api.kick_ball(direccion, potencia)", text: "patear hacia un Vector2D (no puede ser el vector cero); la potencia va de 0.0 a 1.0" },
 ]
 
+const COACH_API_METHODS = [
+  { code: "api.get_current_tick()", text: "devuelve el número del tick actual del partido" },
+  { code: "api.get_pause_type()", text: 'devuelve "COOLING_BREAK", "HALF_TIME" o None si no hay pausa' },
+  { code: "api.get_starters()", text: "devuelve los IDs de tus titulares, en orden de alineación" },
+  { code: "api.get_substitutes()", text: "devuelve los IDs de tus suplentes, en orden de alineación" },
+  { code: "api.change_behavior(player_id, behavior_id)", text: "cambia el comportamiento de un titular de tu equipo" },
+  { code: "api.substitute(player_out_id, player_in_id)", text: "reemplaza un titular por un suplente durante una pausa" },
+]
+
 const GAME_STATE = [
   { code: "gs.ball_position", text: "Point2D con la posición de la pelota" },
   { code: "gs.ball_velocity", text: "Vector2D con la velocidad de la pelota" },
@@ -28,7 +37,7 @@ const GEOMETRY = [
   { code: "vector.normalize()", text: "mismo vector con largo 1" },
 ]
 
-// Una lista con título; la usan las tres secciones de arriba
+// Una lista con título; la usan las secciones de arriba
 function HelpList({ title, items }) {
   return (
     <>
@@ -44,14 +53,33 @@ function HelpList({ title, items }) {
   )
 }
 
-function BehaviorHelp() {
+function BehaviorHelp({ behaviorType = "PLAYER" }) {
+  const isCoachBehavior = behaviorType === "COACH"
+
   return (
     <details className="behavior-help">
       <summary>Ayuda: ¿qué puedo usar en el código?</summary>
 
-      <HelpList title="Métodos de api" items={API_METHODS} />
-      <HelpList title="Estado del juego (gs = api.get_game_state())" items={GAME_STATE} />
-      <HelpList title="Puntos y vectores" items={GEOMETRY} />
+      {isCoachBehavior ? (
+        <>
+          <HelpList title="Métodos de api del DT" items={COACH_API_METHODS} />
+          <p>
+            El DT puede cambiar el comportamiento de sus titulares durante el partido;
+            el id del comportamiento debe ser de tipo jugador. Los cambios de jugadores
+            se hacen durante las pausas. Si el código DT falla durante el partido, 
+            el partido continúa igual y su comportamiento no se ejecuta.
+            Cuando se elige un DT, su comportamiento aplicará en el próximo partido.
+          </p>
+        </>
+      ) : (
+        <>
+          <HelpList title="Métodos de api" items={API_METHODS} />
+          <HelpList title="Estado del juego (gs = api.get_game_state())" items={GAME_STATE} />
+          <HelpList title="Puntos y vectores" items={GEOMETRY} />
+          <h3 className="behavior-help__title">La cancha</h3>
+          <p>Mide 105 por 60 metros: x va de 0 a 105 e y va de 0 a 60.</p>
+        </>
+      )}
 
       <h3 className="behavior-help__title">Funciones disponibles</h3>
       <p>
@@ -61,9 +89,6 @@ function BehaviorHelp() {
         <code>dict</code>, <code>any</code>, <code>all</code>, <code>sorted</code> y el
         módulo <code>math</code>. Cualquier otra función no está disponible.
       </p>
-
-      <h3 className="behavior-help__title">La cancha</h3>
-      <p>Mide 105 por 60 metros: x va de 0 a 105 e y va de 0 a 60.</p>
     </details>
   )
 }

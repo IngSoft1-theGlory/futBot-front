@@ -10,6 +10,15 @@ const SECCIONES = [
   "Funciones disponibles",
   "La cancha",
 ]
+const METODOS_API_DT = [
+  "Métodos de api del DT",
+  "api.get_current_tick()",
+  "api.get_pause_type()",
+  "api.get_starters()",
+  "api.get_substitutes()",
+  "api.change_behavior(player_id, behavior_id)",
+  "api.substitute(player_out_id, player_in_id)",
+]
 const METODOS_API = [
   "api.get_game_state()",
   "api.get_reach_distance()",
@@ -65,5 +74,29 @@ describe("BehaviorHelp", () => {
     textos.forEach((texto) => {
       expect(screen.getByText(texto)).toBeInTheDocument()
     })
+  })
+
+  it("Debería mostrar los métodos del CoachAPI y no los del jugador para un comportamiento de DT", () => {
+    render(<BehaviorHelp behaviorType="COACH" />)
+
+    METODOS_API_DT.forEach((texto) => {
+      expect(screen.getByText(texto)).toBeInTheDocument()
+    })
+    expect(screen.queryByText("api.get_game_state()")).not.toBeInTheDocument()
+    expect(screen.queryByText("La cancha")).not.toBeInTheDocument()
+  })
+
+  it("Debería mostrar las indicaciones del comportamiento de DT", () => {
+    render(<BehaviorHelp behaviorType="COACH" />)
+
+    expect(screen.getByText(/El DT puede cambiar el comportamiento de sus titulares/)).toBeInTheDocument()
+    expect(screen.getByText(/aplicará en el próximo partido/)).toBeInTheDocument()
+  })
+
+  it("Debería no mostrar las indicaciones del DT en la ayuda de un comportamiento de un jugador", () => {
+    render(<BehaviorHelp />)
+
+    expect(screen.queryByText("api.change_behavior(player_id, behavior_id)")).not.toBeInTheDocument()
+    expect(screen.queryByText(/El DT puede cambiar el comportamiento de sus titulares/)).not.toBeInTheDocument()
   })
 })

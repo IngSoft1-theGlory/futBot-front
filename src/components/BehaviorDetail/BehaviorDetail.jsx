@@ -14,7 +14,7 @@ function getErrorMessage(err) {
   return "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
 }
 /*
- Panel de lectura con el detalle de un comportamientoy un botón para editar
+ Panel de lectura con el detalle de un comportamiento y un botón para editar
  Props:
    behaviorId: id del comportamiento que se eligio en la coleccion
    onBack:     función para volver a la colección
@@ -81,6 +81,7 @@ function BehaviorDetail({ behaviorId, onBack, onEdit }) {
         <div className="behavior-detail__content">
           <div className="behavior-detail__header">
             <h2 className="behavior-detail__name">{behavior.name}</h2>
+            <span className="behavior-detail__badge">ID: {behavior.behavior_id}</span>
             {typeLabel && <span className="behavior-detail__badge">{typeLabel}</span>}
             {/* La etiqueta solo aparece si es un comportamiento por default */}
             {behavior.is_default && <span className="behavior-detail__badge">Por default</span>}

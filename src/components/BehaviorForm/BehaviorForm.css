@@ -87,8 +87,8 @@
 
 /* Tipo del comportamiento al editar: texto debajo del título, sin campo */
 .behavior-form__type {
-  margin: 0;
-  font-size: 0.95rem;
+  margin: auto;
+  font-size: 1.35rem;
   color: #94a3b8;
 }
 

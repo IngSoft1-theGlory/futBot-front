@@ -175,6 +175,9 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
   const isCodeTooLong = code.length > MAX_CODE_LENGTH
   // Texto del tipo ("Jugador" o "DT"). Queda undefined si el back no mandó el tipo
   const behaviorTypeLabel = BEHAVIOR_TYPE_LABELS[behaviorType]
+  const executionWarning = behaviorType === "COACH"
+    ? "DT no aplicará sus decisiones en el próximo partido"
+    : "jugador se quedará quieto durante el partido"
   return (
     <section className="behavior-form">
       <h2 className="behavior-form__title">
@@ -257,11 +260,10 @@ function BehaviorForm({ behaviorId, onBack, onSaved }) {
           {/* Reglas del código del comportamiento*/}
           <p className="behavior-form__hint">
             El código debe definir una función on_tick(api). No se permiten for, while, import
-            ni comprensiones, y tampoco el texto "__". Si usás algo que no está disponible, el
-            jugador con este comportamiento se quedará quieto durante el partido. Debajo esta
-            la ayuda con lo que sí podés usar.
+            ni comprensiones, y tampoco el texto "__". Si usás algo que no está disponible,
+            el {executionWarning}. Debajo está la ayuda con lo que sí podés usar.
           </p>
-          <BehaviorHelp />
+          <BehaviorHelp behaviorType={behaviorType} />
         </div>
  
         {/* Error que devolvió el back (o de conexión) al enviar */}
