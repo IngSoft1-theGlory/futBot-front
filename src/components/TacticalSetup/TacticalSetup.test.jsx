@@ -163,7 +163,7 @@ describe("TacticalSetup", () => {
       renderSetup()
 
       expect(await screen.findByText(/Necesitás al menos 6 jugadores/)).toBeTruthy()
-      expect(screen.getByRole("link", { name: /Ir a mis jugadores/ })).toBeTruthy()
+      expect(screen.getByRole("link", { name: /Ir a la creación de jugador/ })).toBeTruthy()
     })
   })
 
