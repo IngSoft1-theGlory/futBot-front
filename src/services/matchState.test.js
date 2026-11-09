@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { applyTick, applyFullState, isMatchOver } from "./matchState"
+import { applyTick, applyFullState, isMatchOver, applyBehaviorChange, applySubstitution, applyPlayerDetails, playersMissingDetails, startPause, finishPause, countDownPause, startPenalties, finishPenalties, mightGoToPenalties } from "./matchState"
 
 const baseMatch = {
   currentTick: 10,
@@ -40,12 +40,28 @@ describe("applyTick", () => {
     expect(result.players[0].attributes).toEqual({ speed: 50 })
   })
 
-  it("no toca a los jugadores que no vienen en el tick", () => {
+  it("Debería sacar de la cancha al jugador que dejó de venir en el tick (fue sustituido)", () => {
     const tick = { current_tick: 11, players: [{ player_id: 1, position: { x: 1, y: 1 }, current_action: "RUN" }] }
 
     const result = applyTick(baseMatch, tick)
 
-    expect(result.players[1]).toBe(baseMatch.players[1])
+    expect(result.players.map((player) => player.player_id)).toEqual([1])
+  })
+
+  it("Debería agregar al jugador que entró, marcado para pedir sus datos", () => {
+    const tick = {
+      current_tick: 11,
+      players: [
+        { player_id: 1, team_id: 1, position: { x: 1, y: 1 }, current_action: "RUN" },
+        { player_id: 7, team_id: 2, position: { x: 90, y: 20 }, current_action: "IDLE" },
+      ],
+    }
+
+    const result = applyTick(baseMatch, tick)
+
+    expect(result.players.map((player) => player.player_id)).toEqual([1, 7])
+    expect(result.players[1]).toMatchObject({ team_id: 2, position: { x: 90, y: 20 }, needsDetails: true })
+    expect(playersMissingDetails(result)).toEqual([7])
   })
 
   it("ignora un tick más viejo que el actual", () => {
@@ -63,6 +79,29 @@ describe("applyTick", () => {
     expect(baseMatch.currentTick).toBe(10)
     expect(baseMatch.score).toEqual({ home: 0, away: 0 })
   })
+
+  it("Debería ignorar los ticks actuales o viejos mientras el partido está en pausa", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+    const tick = {
+      current_tick: 10,
+      score: { home: 0, away: 0 },
+      ball: { x: 52, y: 30 },
+      players: [{ player_id: 1, position: { x: 10, y: 10 }, current_action: "IDLE" }],
+    }
+
+    expect(applyTick(pausedMatch, tick)).toBe(pausedMatch)
+  })
+
+  it("Debería cerrar una pausa colgada si llega un tick más nuevo", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "CB", remainingSeconds: 0 } }
+    const tick = { current_tick: 11, score: { home: 1, away: 0 }, ball: { x: 60, y: 31 } }
+
+    const result = applyTick(pausedMatch, tick)
+
+    expect(result.pause).toBeNull()
+    expect(result.currentTick).toBe(11)
+    expect(result.score).toEqual({ home: 1, away: 0 })
+  })
 })
 
 describe("applyFullState", () => {
@@ -77,6 +116,75 @@ describe("applyFullState", () => {
 
     expect(applyFullState(baseMatch, old)).toBe(baseMatch)
   })
+
+  it("quita la pausa si el estado nuevo dice que ya no hay pausa (por ejemplo, al reconectar)", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+
+    expect(applyFullState(pausedMatch, { ...baseMatch, pause: null }).pause).toBeNull()
+  })
+
+  it("Debería usar la pelota y la posición de los jugadores que trae /state", () => {
+    const fresh = {
+      currentTick: 10,
+      totalTicks: 600,
+      score: { home: 0, away: 0 },
+      ball: { x: 62, y: 20 },
+      players: [{ player_id: 1, team_id: 1, name: "Ana", position: { x: 15, y: 12 }, current_action: "idle" }],
+      pause: { type: "HALF_TIME", remainingSeconds: 12 },
+    }
+
+    const result = applyFullState(baseMatch, fresh)
+
+    expect(result.ball).toEqual({ x: 62, y: 20 })
+    expect(result.players[0].position).toEqual({ x: 15, y: 12 })
+    expect(result.pause).toEqual({ type: "HALF_TIME", remainingSeconds: 12 })
+  })
+})
+
+describe("pausas", () => {
+  it("startPause guarda el tipo y arranca la cuenta desde duration_seconds", () => {
+    const result = startPause(baseMatch, { type: "HT", duration_seconds: 30, current_tick: 10 })
+
+    expect(result.pause).toEqual({ type: "HT", remainingSeconds: 30 })
+    expect(result.score).toBe(baseMatch.score) // lo demás no cambia
+    expect(baseMatch.pause).toBeUndefined() // no modifica el original
+  })
+
+  it("finishPause vuelve a 'sin pausa'", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 5 } }
+
+    expect(finishPause(pausedMatch).pause).toBeNull()
+  })
+
+  it("countDownPause descuenta un segundo", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 30 } }
+
+    expect(countDownPause(pausedMatch).pause).toEqual({ type: "HT", remainingSeconds: 29 })
+  })
+
+  it("countDownPause no baja de 0 y no hace nada si no hay pausa", () => {
+    const pauseAtZero = { ...baseMatch, pause: { type: "HT", remainingSeconds: 0 } }
+    const notPaused = { ...baseMatch, pause: null }
+
+    expect(countDownPause(pauseAtZero)).toBe(pauseAtZero)
+    expect(countDownPause(notPaused)).toBe(notPaused)
+  })
+
+  it("Debería ignorar una pausa duplicada y conserva el estado actual", () => {
+    const pausedMatch = { ...baseMatch, pause: { type: "HT", remainingSeconds: 12 }}
+    const result = startPause(pausedMatch, {
+      type: "HT",
+      duration_seconds: 20,
+      current_tick: 120,
+    })
+
+    expect(result).toBe(pausedMatch)
+  })
+
+  it("Deberia devolver al no haber una pausa el estado del partido", () => {
+    const notPaused = { ...baseMatch, pause: null }
+    expect(finishPause(notPaused)).toBe(notPaused)
+  })  
 })
 
 describe("isMatchOver", () => {
@@ -86,5 +194,77 @@ describe("isMatchOver", () => {
 
   it("es false mientras falten ticks", () => {
     expect(isMatchOver({ currentTick: 599, totalTicks: 600 })).toBe(false)
+  })
+})
+
+describe("applyBehaviorChange", () => {
+  it("Debería cambiar solo el comportamiento del jugador indicado", () => {
+    const result = applyBehaviorChange({ ...baseMatch, players: [
+      { ...baseMatch.players[0], behavior_id: 3 },
+      baseMatch.players[1],
+    ] }, 1, 8)
+
+    expect(result.players[0].behavior_id).toBe(8)
+    expect(result.players[0].position).toEqual({ x: 10, y: 10 })
+    expect(result.players[1]).toBe(baseMatch.players[1])
+  })
+})
+
+describe("sustituciones", () => {
+  it("Debería mostrar al que entró en el lugar del que salió", () => {
+    const result = applySubstitution(baseMatch, 2, 7)
+
+    expect(result.players.map((player) => player.player_id)).toEqual([1, 7])
+    expect(result.players[1]).toMatchObject({ team_id: 2, position: { x: 90, y: 20 }, needsDetails: true })
+    expect(result.players[0]).toBe(baseMatch.players[0])
+  })
+
+  it("Debería usar los datos del suplente que entra, sin pedirlos de nuevo, y mandar al banco al que sale", () => {
+    const bench = { player_id: 7, team_id: 2, name: "Nico González", number: 11, attributes: { speed: 70 } }
+    const matchWithBench = { ...baseMatch, substitutes: [bench] }
+
+    const result = applySubstitution(matchWithBench, 2, 7)
+
+    expect(result.players[1]).toMatchObject({ name: "Nico González", attributes: { speed: 70 }, position: { x: 90, y: 20 } })
+    expect(playersMissingDetails(result)).toEqual([])
+    expect(result.substitutes.map((player) => player.player_id)).toEqual([2])
+    expect(matchWithBench.substitutes).toEqual([bench]) // no modifica el original
+  })
+
+  it("No debería cambiar nada si el que sale no está en cancha o el que entra ya está", () => {
+    expect(applySubstitution(baseMatch, 99, 7)).toBe(baseMatch)
+    expect(applySubstitution(baseMatch, 2, 1)).toBe(baseMatch)
+  })
+
+  it("Debería completar los datos del que entró conservando su posición", () => {
+    const substituted = applySubstitution(baseMatch, 2, 7)
+    const fresh = [{ player_id: 7, team_id: 2, name: "Nico González", number: 11, attributes: { speed: 70 } }]
+
+    const result = applyPlayerDetails(substituted, fresh)
+
+    expect(result.players[1]).toMatchObject({ name: "Nico González", number: 11, position: { x: 90, y: 20 } })
+    expect(result.players[1].needsDetails).toBeUndefined()
+    expect(playersMissingDetails(result)).toEqual([])
+  })
+})
+
+describe("penales", () => {
+  it("Debería marcar el partido en penales con startPenalties y sacarlo de la tanda con finishPenalties", () => {
+    const inPenalties = startPenalties(baseMatch)
+
+    expect(inPenalties.isPenalties).toBe(true)
+    expect(finishPenalties(inPenalties).isPenalties).toBe(false)
+  })
+
+  it("Debería aplicar los ticks de la tanda con su marcador de penales, aunque el número de tick no avance", () => {
+    const inPenalties = startPenalties({ ...baseMatch, currentTick: 600 })
+    const tick = { current_tick: 5, score: { home: 0, away: 0, phome: 1, paway: 0 } }
+
+    expect(applyTick(inPenalties, tick).score).toEqual({ home: 0, away: 0, phome: 1, paway: 0 })
+  })
+
+  it("Debería poder ir a penales solo si el marcador está empatado", () => {
+    expect(mightGoToPenalties({ score: { home: 1, away: 1 } })).toBe(true)
+    expect(mightGoToPenalties({ score: { home: 2, away: 1 } })).toBe(false)
   })
 })

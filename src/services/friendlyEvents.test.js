@@ -15,13 +15,14 @@ describe("applyFriendlyEvent", () => {
     const result = applyFriendlyEvent([AMISTOSO_1], FRIENDLY_CREATED, {
       match_id: 12,
       team_host_id: 9,
+      team_host_name: "Los Pibes",
       match_duration: 2,
       status: "PENDING",
     })
 
     expect(result).toEqual([
       AMISTOSO_1,
-      { matchId: 12, teamHostId: 9, teamAwayId: null, status: "PENDING", matchDuration: 2 },
+      { matchId: 12, teamHostId: 9, teamHostName: "Los Pibes", teamAwayId: null, teamAwayName: null, status: "PENDING", matchDuration: 2 },
     ])
   })
 

@@ -26,13 +26,17 @@ function isFinalError(error) {
 /*
  callbacks:
    onTick(mensaje)       llegó un TICK_UPDATE
+   onPauseStarted(mensaje)  llegó un PAUSE_STARTED (empezó una pausa)
+   onPauseFinished(mensaje) llegó un PAUSE_FINISHED (terminó la pausa)
+   onPenaltiesStarted(mensaje)  llegó un PENALTIES_STARTED (empezó la tanda de penales)
+   onPenaltiesFinished(mensaje) llegó un PENALTIES_FINISHED (terminó la tanda de penales)
    onConnected(esReconexion) la conexión quedó abierta (true si antes ya se había cortado)
    onDisconnected()      se cortó una conexión que ya había funcionado (se va a reintentar)
    onFirstConnectionFailed() falló el PRIMER intento: no se reintenta, la pantalla ofrece un botón
    onRejected(error)     el backend rechazó el pedido con un error definitivo (400/403/404)
 */
 export function openMatchSocket(matchId, callbacks) {
-  const { onTick, onConnected, onDisconnected, onFirstConnectionFailed, onRejected } = callbacks
+  const { onTick, onPauseStarted, onPauseFinished, onPenaltiesStarted, onPenaltiesFinished, onConnected, onDisconnected, onFirstConnectionFailed, onRejected,} = callbacks
 
   let isClosed = false // true cuando la pantalla pidió cerrar (o ya no hay que reintentar)
   let socket = null
@@ -116,9 +120,17 @@ export function openMatchSocket(matchId, callbacks) {
         return // mensaje que no es JSON: se ignora
       }
 
-      // El motor manda los datos del tick junto al nombre del evento:
+      // El motor manda los datos junto al nombre del evento:
       // { "event": "TICK_UPDATE", "current_tick": 10, ... }
+      // { "event": "PAUSE_STARTED", "type": "...", "duration_seconds": 30, "current_tick": 600 }
+      // { "event": "PAUSE_FINISHED", "type": "..." }
+      // { "event": "PENALTIES_STARTED", "match_id": 12 }
+      // { "event": "PENALTIES_FINISHED", "match_id": 12 }
       if (message?.event === "TICK_UPDATE") onTick(message)
+      else if (message?.event === "PAUSE_STARTED") onPauseStarted(message)
+      else if (message?.event === "PAUSE_FINISHED") onPauseFinished(message)
+      else if (message?.event === "PENALTIES_STARTED") onPenaltiesStarted(message)
+      else if (message?.event === "PENALTIES_FINISHED") onPenaltiesFinished(message)
     }
 
     // El navegador siempre llama a onclose (también después de un error),

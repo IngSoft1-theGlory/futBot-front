@@ -10,9 +10,10 @@ vi.mock("../../services/createhttpService", async (importOriginal) => {
 })
 
 const mockStartSession = vi.fn()
+let mockSessionExpired = false
 
 vi.mock("../../hooks/useSession", () => ({
-  useSession: () => ({ startSession: mockStartSession }),
+  useSession: () => ({ startSession: mockStartSession, sessionExpired: mockSessionExpired }),
 }))
 
 import { httpService, ApiError } from "../../services/createhttpService.js"
@@ -54,6 +55,7 @@ describe("LoginPage", () => {
   beforeEach(() => {
     httpService.post.mockReset()
     mockStartSession.mockReset()
+    mockSessionExpired = false
   })
 
   afterEach(() => {
@@ -88,6 +90,21 @@ describe("LoginPage", () => {
       await user.click(screen.getByRole("link", { name: /registrate/i }))
 
       expect(screen.getByText("Pantalla de registro")).toBeTruthy()
+    })
+  })
+
+  describe("Aviso de sesión expirada", () => {
+    it("Si se llegó al login porque la sesión venció, muestra el aviso", () => {
+      mockSessionExpired = true
+      renderPage()
+
+      expect(screen.getByText("Tu sesión expiró. Iniciá sesión de nuevo.")).toBeTruthy()
+    })
+
+    it("En un login normal no muestra el aviso", () => {
+      renderPage()
+
+      expect(screen.queryByText(/tu sesión expiró/i)).toBeNull()
     })
   })
 

@@ -3,9 +3,12 @@ import { httpService } from "./createhttpService"
  resultado final de un partido (GET /matches/{matchId}/result)
 
  forma de la respuesta del backend:
-   { match_id, status: "FINISHED",
-     home_team: { team_id, team_name, goals },
-     away_team: { team_id, team_name, goals } }
+   { match_id, status: "FINISHED", league_id,
+     home_team: { team_id, team_name, goals, penalty_goals },
+     away_team: { team_id, team_name, goals, penalty_goals } }
+
+ penalty_goals viene en null si el partido no se definió por penales
+ league_id es el id de la liga si el partido es de liga, o null si es amistoso
 
  Lanza ApiError si el backend responde con error
    400 MATCH_NOT_FINISHED (el partido sigue en curso) o 404 MATCH_NOT_FOUND
@@ -15,6 +18,8 @@ export async function fetchMatchResult(matchId) {
 
   return {
     matchId: data.match_id,
+    // si el back no manda el campo (undefined) queda null, y el partido se trata como amistoso
+    leagueId: data.league_id ?? null,
     home: toTeam(data.home_team),
     away: toTeam(data.away_team),
   }
@@ -26,7 +31,14 @@ function toTeam(team) {
     id: team.team_id,
     name: team.team_name ?? `Equipo #${team.team_id}`,
     goals: team.goals,
+    // si el back no manda el campo (undefined) queda null, igual que "no hubo penales"
+    penaltyGoals: team.penalty_goals ?? null,
   }
+}
+
+// true si el partido se definio por penales (los dos equipos tienen goles de penales), se compara con null y no se usa solo el valor, porque 0 penales convertidos tambien es un resultado valido
+export function hasPenalties(result) {
+  return result.home.penaltyGoals !== null && result.away.penaltyGoals !== null
 }
 
 export function getOutcome(result, userTeamId) {
@@ -36,5 +48,11 @@ export function getOutcome(result, userTeamId) {
   const rival = mine === result.home ? result.away : result.home
   if (mine.goals > rival.goals) return "won"
   if (mine.goals < rival.goals) return "lost"
+
+  // empate en goles: si hubo penales, el ganador lo decide la tanda
+  if (hasPenalties(result)) {
+    if (mine.penaltyGoals > rival.penaltyGoals) return "won"
+    if (mine.penaltyGoals < rival.penaltyGoals) return "lost"
+  }
   return "draw"
 }

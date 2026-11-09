@@ -60,6 +60,17 @@ describe("MatchHeader", () => {
     expect(screen.getByText("2 - 1")).toBeInTheDocument()
   })
 
+  it("Debería mostrar los goles de penales a los costados del marcador", () => {
+    const { container } = renderHeader({ score: { home: 0, away: 0 }, penalties: { home: 1, away: 0 } })
+    expect(container.querySelector(".match-header__score").textContent).toBe("(1) 0 - 0 (0)")
+  })
+
+  it("Debería mostrar 'En Penales' en lugar del reloj durante la tanda", () => {
+    renderHeader({ isPenalties: true })
+    expect(screen.getByText("En Penales")).toBeInTheDocument()
+    expect(screen.queryByText("01:02")).not.toBeInTheDocument()
+  })
+
   it("Debería mostrar el reloj calculado a partir de current_tick", () => {
     renderHeader()
     expect(screen.getByText("01:02")).toBeInTheDocument()

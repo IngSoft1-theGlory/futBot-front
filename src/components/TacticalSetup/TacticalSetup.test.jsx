@@ -25,8 +25,8 @@ const PLAYERS = [
 ]
 
 const BEHAVIORS = [
-  { behavior_id: 1, name: "Patear al arco", is_default: true },
-  { behavior_id: 2, name: "Defensor", is_default: true },
+  { behavior_id: 1, name: "Patear al arco", is_default: true, behavior_type: "PLAYER" },
+  { behavior_id: 2, name: "Defensor", is_default: true, behavior_type: "PLAYER" },
 ]
 
 function playersPage(data, page = 1, totalPages = 1) {
@@ -138,12 +138,32 @@ describe("TacticalSetup", () => {
       expect(await screen.findByRole("heading", { name: "Titulares" })).toBeTruthy()
     })
 
+    it("Debería ofrecer solo comportamientos de jugador cuando la lista mezcla PLAYER y COACH", async () => {
+      mockBackend({
+        behaviors: [
+          ...BEHAVIORS,
+          { behavior_id: 3, name: "DT ofensivo", is_default: true, behavior_type: "COACH" },
+          { behavior_id: 4, name: "Mi DT", is_default: false, behavior_type: "COACH" },
+        ],
+      })
+      renderSetup()
+      await waitForLoad()
+
+      // Un titular y un suplente: los dos selectores reciben la misma lista filtrada
+      for (const label of ["Delantero", "Suplente 1"]) {
+        const optionNames = within(behaviorSelect(label))
+          .getAllByRole("option")
+          .map((option) => option.textContent)
+        expect(optionNames).toEqual(["Elegí comportamiento", "Patear al arco", "Defensor"])
+      }
+    })
+
     it("Debería avisar que faltan jugadores si el usuario tiene menos de 6", async () => {
       mockBackend({ players: PLAYERS.slice(0, 4) })
       renderSetup()
 
       expect(await screen.findByText(/Necesitás al menos 6 jugadores/)).toBeTruthy()
-      expect(screen.getByRole("link", { name: /Ir a mis jugadores/ })).toBeTruthy()
+      expect(screen.getByRole("link", { name: /Ir a la creación de jugador/ })).toBeTruthy()
     })
   })
 

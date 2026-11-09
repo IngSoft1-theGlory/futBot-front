@@ -21,7 +21,8 @@ export function formatClock(currentTick, totalTicks) {
 }
 
 
-function MatchHeader({ homeTeam, awayTeam, score, currentTick, totalTicks }) {
+// penalties: goles de penales { home, away }, o null si no hubo penales
+function MatchHeader({ homeTeam, awayTeam, score, currentTick, totalTicks, penalties = null, isPenalties = false }) {
   if (!homeTeam || !awayTeam || !score) {   //Si no hay equipos o score, no renderizamos nada
     return null
   }
@@ -36,8 +37,16 @@ function MatchHeader({ homeTeam, awayTeam, score, currentTick, totalTicks }) {
       </div>
 
       <div className="match-header__center">
-        <p className="match-header__score">{score.home} - {score.away}</p>
-        <p className="match-header__clock">{formatClock(currentTick, totalTicks)}</p>
+        <p className="match-header__score">
+          {penalties && <span className="match-header__penalties">({penalties.home}) </span>}
+          {score.home} - {score.away}
+          {penalties && <span className="match-header__penalties"> ({penalties.away})</span>}
+        </p>
+        {isPenalties ? (
+          <p className="match-header__clock match-header__clock--penalties">En Penales</p>
+        ) : (
+          <p className="match-header__clock">{formatClock(currentTick, totalTicks)}</p>
+        )}
       </div>
 
       <div className="match-header__team">

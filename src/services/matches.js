@@ -7,9 +7,13 @@ import { httpService } from "./createhttpService"
 // Se usa al entrar a la pantalla y cada vez que la conexión en vivo se recupera.
 //
 // Forma esperada de la respuesta:
-//   { current_tick, total_ticks, score: { home, away }, ball: { x, y },
+//   { current_tick, total_ticks, phase, score: { home, away, phome, paway }, ball: { x, y },
 //     players: [{ player_id, team_id, name, number, attributes, behavior_id,
-//                 position: { x, y }, current_action }] }
+//                 position: { x, y }, current_action }],
+//     substitutes: [{ player_id, team_id, name, number, attributes, behavior_id,
+//                     position: null, current_action: null }],   <- solo los del propio equipo
+//     pause: { type, remaining_seconds },   <- cuando phase es "PAUSED"
+//     planned_substitution: { player_in_id, player_out_id } }   <- o null si no hay cambio planificado
 export async function fetchMatchState(matchId) {
   const data = await httpService.get(`/matches/${matchId}/state`)
 
@@ -19,7 +23,26 @@ export async function fetchMatchState(matchId) {
     score: data.score,
     ball: data.ball ?? null,
     players: data.players ?? [],
+    substitutes: data.substitutes ?? [],
+    pause: toPause(data),
+    // Sirve si se recarga la pantalla durante los penales
+    isPenalties: data.score?.phome != null,
+    // Sirve si se recarga la pantalla con un cambio planificado
+    plannedSubstitution: toPlannedSubstitution(data.planned_substitution),
   }
+}
+
+// Convierte el cambio planificado de /state a { playerOutId, playerInId }, o null si no hay
+function toPlannedSubstitution(plan) {
+  if (!plan) return null
+  return { playerOutId: plan.player_out_id, playerInId: plan.player_in_id }
+}
+
+// Convierte la pausa que informa /state a { type, remainingSeconds }, si el partido NO esta en pausa devuelve null, así /state no activa ninguna pausa
+// remaining_seconds puede traer decimales (ej: 41.2): se redondea para arriba, porque la cuenta regresiva va de a segundos enteros
+function toPause(data) {
+  if (data.phase !== "PAUSED" || !data.pause) return null
+  return { type: data.pause.type, remainingSeconds: Math.ceil(data.pause.remaining_seconds) }
 }
 
 // Pide los datos de los equipos (GET /friendly/{matchId}): nombre, logo y cuál es el local.
@@ -49,4 +72,23 @@ export async function requestMatchWebsocketUrl(matchId) {
     throw new Error("La respuesta no incluye websocket_url")
   }
   return data.websocket_url
+}
+
+// Cambia el comportamiento de un jugador propio durante el partido
+// (PUT /matches/{matchId}/players/{playerId}/behavior). El motor lo aplica desde el próximo tick.
+// Respuesta: { match_id, player_id, behavior_id }
+export async function changePlayerBehavior(matchId, playerId, behaviorId) {
+  return httpService.put(`/matches/${matchId}/players/${playerId}/behavior`, { behavior_id: behaviorId })
+}
+
+// Pide una sustitución (POST /matches/{matchId}/teams/{teamId}/substitutions):
+// sale un titular y entra un suplente. Si el back la rechaza, httpService lanza un ApiError.
+// El back responde 201 si había pausa (el cambio ya se aplicó) o 202 si no (quedó planificado
+// para la próxima pausa). Devuelve { planned: true } en el segundo caso.
+export async function requestSubstitution(matchId, teamId, playerOutId, playerInId) {
+  const { status } = await httpService.postWithStatus(`/matches/${matchId}/teams/${teamId}/substitutions`, {
+    player_out_id: playerOutId,
+    player_in_id: playerInId,
+  })
+  return { planned: status === 202 }
 }

@@ -7,12 +7,15 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 // MatchScreenPage casi no tiene lógica: el hook consigue los datos y los componentes los dibujan.
 // Se mockean el hook y los hijos, y se testea qué muestra la pantalla y qué props les pasa.
 
-const { mockMatchHeader, mockMatchField } = vi.hoisted(() => ({
+const { mockMatchHeader, mockMatchField, mockPauseMenu } = vi.hoisted(() => ({
   mockMatchHeader: vi.fn(),
   mockMatchField: vi.fn(),
+  mockPauseMenu: vi.fn(),
 }))
 
 vi.mock("../../hooks/useMatchLive", () => ({ useMatchLive: vi.fn() }))
+
+vi.mock("../../hooks/useSession", () => ({ useSession: () => ({ user: { team_id: 1 } }) }))
 
 vi.mock("../../components/MatchHeader/MatchHeader", () => ({
   default: (props) => {
@@ -42,13 +45,22 @@ vi.mock("../../components/MatchField/MatchField", () => ({
 }))
 
 vi.mock("../../components/PlayerPanel/PlayerPanel", () => ({
-  default: ({ player, onClose }) => (
+  default: ({ player, onClose, canChangeBehavior, canSubstitute }) => (
     <aside data-testid="player-panel">
       <p>{`Panel de ${player.name}`}</p>
+      {canChangeBehavior && <p>Puede cambiar el comportamiento</p>}
+      {canSubstitute && <p>Puede planificar un cambio</p>}
       <p data-testid="panel-x">{player.position.x}</p>
       <button onClick={onClose}>Cerrar panel</button>
     </aside>
   ),
+}))
+
+vi.mock("../../components/PauseMenu/PauseMenu", () => ({
+  default: (props) => {
+    mockPauseMenu(props)
+    return <section data-testid="pause-menu" />
+  },
 }))
 
 import { useMatchLive } from "../../hooks/useMatchLive"
@@ -114,6 +126,7 @@ describe("MatchScreenPage", () => {
     useMatchLive.mockReset()
     mockMatchHeader.mockClear()
     mockMatchField.mockClear()
+    mockPauseMenu.mockClear()
     mockHook()
   })
 
@@ -132,6 +145,8 @@ describe("MatchScreenPage", () => {
         score: MATCH.score,
         currentTick: 450,
         totalTicks: 1200,
+        penalties: null,
+        isPenalties: false,
       })
       expect(within(screen.getByTestId("pitch")).getByTestId("match-field")).toBeTruthy()
       expect(ultimasProps(mockMatchField)).toMatchObject({
@@ -158,6 +173,40 @@ describe("MatchScreenPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }))
       expect(screen.queryByTestId("player-panel")).toBeNull()
       expect(ultimasProps(mockMatchField).selectedPlayerId).toBeNull()
+    })
+
+    it("Debería permitir cambiar el comportamiento solo de los jugadores del propio equipo", () => {
+      render(pagina())
+
+      elegirJugador("Messi")
+      expect(screen.getByText("Puede cambiar el comportamiento")).toBeTruthy()
+
+      elegirJugador("Ronaldo")
+      expect(screen.queryByText("Puede cambiar el comportamiento")).toBeNull()
+    })
+  })
+
+  describe("Planificar un cambio", () => {
+    it("Debería permitir planificar un cambio solo de los jugadores del propio equipo", () => {
+      render(pagina())
+
+      elegirJugador("Messi")
+      expect(screen.getByText("Puede planificar un cambio")).toBeTruthy()
+
+      elegirJugador("Ronaldo")
+      expect(screen.queryByText("Puede planificar un cambio")).toBeNull()
+    })
+
+    it.each([
+      ["en una pausa", { pause: { type: "HALF_TIME", remainingSeconds: 25 } }],
+      ["en los penales", { isPenalties: true }],
+    ])("Debería no permitir planificar un cambio %s", (_caso, cambios) => {
+      mockHook({ match: { ...MATCH, ...cambios } })
+      render(pagina())
+
+      elegirJugador("Messi")
+
+      expect(screen.queryByText("Puede planificar un cambio")).toBeNull()
     })
   })
 
@@ -246,6 +295,55 @@ describe("MatchScreenPage", () => {
       actualizarHook(resultado, { match: { ...MATCH, players: [RONALDO] } })
 
       expect(screen.queryByTestId("player-panel")).toBeNull()
+    })
+  })
+
+  describe("Pausas", () => {
+    it("Debería no mostrar el menú de pausa cuando el partido está en juego", () => {
+      mockHook({ match: { ...MATCH, pause: null } })
+      render(pagina())
+
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
+    })
+
+    it("Debería mostrar el menú con los datos de la pausa, sin dejar de mostrar el marcador ni la cancha", () => {
+      const substitutePlayer = vi.fn()
+      const updatePlayerBehavior = vi.fn()
+      const pause = { type: "HALF_TIME", remainingSeconds: 25 }
+      const substitutes = [{ player_id: 105, team_id: 1, name: "Nico González", number: 15 }]
+      mockHook({ match: { ...MATCH, pause, substitutes }, substitutePlayer, updatePlayerBehavior })
+      render(pagina("42"))
+
+      expect(ultimasProps(mockPauseMenu)).toEqual({
+        matchId: 42,
+        teamId: 1,
+        pause,
+        players: MATCH.players,
+        substitutes,
+        onSubstituted: substitutePlayer,
+        onBehaviorChanged: updatePlayerBehavior,
+      })
+      expect(ultimasProps(mockMatchHeader).score).toEqual(MATCH.score)
+      expect(screen.getByTestId("match-field")).toBeTruthy()
+    })
+
+    it("Debería actualizar la cuenta regresiva y ocultar el menú cuando se reanuda el partido", () => {
+      mockHook({ match: { ...MATCH, pause: { type: "HALF_TIME", remainingSeconds: 25 } } })
+      const resultado = render(pagina())
+
+      actualizarHook(resultado, { match: { ...MATCH, pause: { type: "HALF_TIME", remainingSeconds: 24 } } })
+      expect(ultimasProps(mockPauseMenu).pause.remainingSeconds).toBe(24)
+
+      actualizarHook(resultado, { match: { ...MATCH, pause: null } })
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
+    })
+
+    it("Debería mostrar el error y no el menú si el usuario no participa en el partido", () => {
+      mockHook({ status: "not-participant", match: null, teams: null })
+      render(pagina())
+
+      expect(screen.getByRole("alert").textContent).toBe("No participás en este partido.")
+      expect(screen.queryByTestId("pause-menu")).toBeNull()
     })
   })
 })

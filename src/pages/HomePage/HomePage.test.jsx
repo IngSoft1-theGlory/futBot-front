@@ -11,6 +11,10 @@ vi.mock("../../hooks/useSession", () => ({
   useSession: () => ({ user: mockUser, logout: mockLogout }),
 }))
 
+vi.mock("../../services/rankings", () => ({
+  fetchGlobalRanking: vi.fn(() => Promise.resolve({ ranking: [], hasNextPage: false })),
+}))
+
 import HomePage from "./HomePage"
 
 // Rutas a las que redirige cada botón de la home
@@ -21,6 +25,7 @@ const DESTINOS = [
   { boton: "Unirse a un amistoso", ruta: "/friendlies" },
   { boton: "Crear jugador", ruta: "/players/createplayer" },
   { boton: "Ver comportamientos", ruta: "/behaviors" },
+  { boton: "Ver ranking completo", ruta: "/ranking" },
 ]
 
 function renderPage() {
@@ -83,6 +88,13 @@ describe("HomePage", () => {
       }
     })
 
+    it("Debería mostrar la sección Competencia con el acceso al ranking global", () => {
+      renderPage()
+
+      expect(screen.getByRole("heading", { name: "Competencia" })).toBeTruthy()
+      expect(boton("Ver ranking completo")).toBeTruthy()
+    })
+
     it("No debería listar comportamientos, solo mostrar el acceso a su pantalla", () => {
       renderPage()
 
@@ -99,6 +111,24 @@ describe("HomePage", () => {
       await user.click(boton(nombre))
 
       expect(screen.getByText(`Pantalla ${ruta}`)).toBeTruthy()
+    })
+  })
+
+  describe("Perfil", () => {
+    it("Debería ir al perfil al tocar el nombre de usuario de la barra superior", async () => {
+      const user = userEvent.setup()
+      render(
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/profile" element={<h1>Mi perfil</h1>} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+      await user.click(screen.getByRole("link", { name: /Maradona10/ }))
+
+      expect(screen.getByRole("heading", { name: "Mi perfil" })).toBeTruthy()
     })
   })
 

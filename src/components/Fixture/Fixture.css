@@ -1,0 +1,102 @@
+/* ==========================================================
+   Fixture — partidos de la liga agrupados por fecha
+   Usa los mismos colores que el lobby de liga y la tabla.
+   ========================================================== */
+
+.fixture {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  color: #e2e8f0;
+}
+
+/* ---------- Una fecha ---------- */
+
+.fixture__round {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fixture__round-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  color: #94a3b8;
+}
+
+.fixture__matches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Un partido ---------- */
+
+.fixture__match {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+/* Local a la izquierda, marcador en el medio, visitante a la derecha */
+.fixture__teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.fixture__team {
+  font-weight: 700;
+  color: #f8fafc;
+  overflow-wrap: anywhere; /* nombres largos bajan de línea en vez de romper la fila */
+}
+
+/* Cada nombre se pega al marcador */
+.fixture__team--home {
+  text-align: right;
+}
+
+.fixture__team--away {
+  text-align: left;
+}
+
+.fixture__score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #c7d2fe;
+}
+
+.fixture__status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+}
+
+/* ---------- Fixture vacío ---------- */
+
+.fixture__empty {
+  color: #94a3b8;
+}

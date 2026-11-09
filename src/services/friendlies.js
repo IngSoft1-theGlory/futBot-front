@@ -37,7 +37,9 @@ export function friendlyMapping(match) {
   return {
     matchId: match.match_id,
     teamHostId: match.team_host_id,
+    teamHostName: match.team_host_name ?? null,  
     teamAwayId: match.team_away_id ?? null,
+    teamAwayName: match.team_away_name ?? null,   
     status: match.status,
     matchDuration: match.match_duration,
   }

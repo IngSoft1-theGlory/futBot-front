@@ -75,6 +75,13 @@
   color: #fecaca;
 }
 
+/* Aviso de sesión expirada */
+.login-card__alert--warning {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+}
+
 /* ---------- Formulario ---------- */
 
 .login-form {

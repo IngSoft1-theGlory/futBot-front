@@ -8,10 +8,19 @@ import CreatePlayerPage from "./pages/PlayersPage/CreatePlayerPage/CreatePlayerP
 import PlayersPage from "./pages/PlayersPage/PlayersPage"
 import FriendlyListPage from "./pages/FriendlyListPage/FriendlyListPage" 
 import CreateFriendlyPage from "./pages/CreateFriendlyPage/CreateFriendlyPage"
+import CreateLeaguePage from "./pages/CreateLeaguePage/CreateLeaguePage"
 import FriendlyLobby from "./pages/FriendlyLobby/FriendlyLobby"
+import LeagueLobbyPage from "./pages/LeagueLobbyPage/LeagueLobbyPage"
+import LeagueLineupPage from "./pages/LeagueLineupPage/LeagueLineupPage"
 import JoinFriendlyPage from "./pages/JoinFriendlyPage/JoinFriendlyPage"
+import LeagueListPage from "./pages/LeagueListPage/LeagueListPage"
+import JoinLeaguePage from "./pages/JoinLeaguePage/JoinLeaguePage"
+import VerifyLeaguePasswordPage from "./pages/VerifyLeaguePasswordPage/VerifyLeaguePasswordPage"
 import MatchScreenPage from "./pages/MatchScreenPage/MatchScreenPage"
 import MatchResultPage from "./pages/MatchResultPage/MatchResultPage"
+import BehaviorListPage from "./pages/BehaviorListPage/BehaviorListPage"
+import ProfilePage from "./pages/ProfilePage/ProfilePage"
+import RankingPage from "./pages/RankingPage/RankingPage"
 
 function App() {
   return (
@@ -28,12 +37,21 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/friendlies" element={<FriendlyListPage />} />
         <Route path="/friendlies/:matchId" element={<FriendlyLobby />} />
+        <Route path="/leagues/:leagueId" element={<LeagueLobbyPage />}  />
         <Route path="/friendlies/:matchId/join" element={<JoinFriendlyPage />} />
         <Route path="/matches/:matchId" element={<MatchScreenPage />} />
         <Route path="/matches/:matchId/result" element={<MatchResultPage />} />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/createplayer" element={<CreatePlayerPage />} />
         <Route path="/friendlies/new" element={<CreateFriendlyPage />} />
+        <Route path="/leagues" element={<LeagueListPage />} />
+        <Route path="/leagues/:leagueId/verify-password" element={<VerifyLeaguePasswordPage />} />
+        <Route path="/leagues/:leagueId/join" element={<JoinLeaguePage />} />
+        <Route path="/leagues/:leagueId/lineup" element={<LeagueLineupPage />} />
+        <Route path="/leagues/new" element={<CreateLeaguePage />} />
+        <Route path="/behaviors" element={<BehaviorListPage />}  />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/ranking" element={<RankingPage />} />
       </Route>
 
       {/* Cualquier otra URL vuelve al inicio */}

@@ -85,6 +85,14 @@ describe("PlayerPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it("Debería avisar que no se pueden hacer cambios durante los penales, en lugar de ofrecer el cambio", async () => {
+    render(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canChangeBehavior isPenalties />)
+    await screen.findByText("Defensivo")
+
+    expect(screen.getByText("No se pueden hacer cambios durante los penales")).toBeTruthy()
+    expect(screen.getAllByRole("button").length).toBe(1) // solo el de cerrar
+  })
+
   it("Debería no ofrecer acciones de edición", async () => {
     httpService.get.mockResolvedValue({ name: "Defensivo" })
     const { container } = render(<PlayerPanel player={ownPlayer} onClose={() => {}} />)
@@ -101,6 +109,15 @@ describe("PlayerPanel", () => {
 
     const urls = httpService.get.mock.calls.map(([url]) => url)
     expect(urls.some((url) => url.includes("/state"))).toBe(false)
+  })
+
+  it("Debería ofrecer planificar un cambio solo si la pantalla lo permite", async () => {
+    const { rerender } = render(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canSubstitute />)
+    await screen.findByText("Defensivo")
+    expect(screen.getByRole("button", { name: "Planificar cambio" })).toBeTruthy()
+
+    rerender(<PlayerPanel player={ownPlayer} onClose={() => {}} matchId={12} canSubstitute={false} />)
+    expect(screen.queryByRole("button", { name: "Planificar cambio" })).toBeNull()
   })
 
   it("Debería no dibujar nada si no hay jugador seleccionado", () => {

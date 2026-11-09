@@ -95,6 +95,21 @@
   overflow-wrap: anywhere;
 }
 
+/* Link para volver al inicio.
+   Se escribe como ".friendly-lobby .friendly-lobby__back" para ganarle en especificidad
+   a ".friendly-lobby a", que si no pisaría el color */
+.friendly-lobby .friendly-lobby__back {
+  margin-top: 1.5rem;
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+}
+
+.friendly-lobby .friendly-lobby__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
 .friendly-lobby__role {
   font-size: 0.7rem;
   font-weight: 600;

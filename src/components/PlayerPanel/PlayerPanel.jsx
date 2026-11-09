@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { httpService } from "../../services/createhttpService"
+import BehaviorSelector from "../BehaviorSelector/BehaviorSelector"
+import SubstitutionSelector from "../SubstitutionSelector/SubstitutionSelector"
 import "./PlayerPanel.css"
 
 const ATTRIBUTES = [
@@ -10,7 +12,22 @@ const ATTRIBUTES = [
   { key: "strength", label: "Fuerza" },
 ]
 
-function PlayerPanel({ player, onClose }) {
+// En penales el back asigna arquero o pateador, así que no se puede cambiar el comportamiento
+// canSubstitute: la pantalla decide si se puede planificar un cambio (jugador propio, sin pausa ni penales)
+function PlayerPanel({
+  player,
+  onClose,
+  matchId,
+  canChangeBehavior = false,
+  isPenalties = false,
+  onBehaviorChanged,
+  canSubstitute = false,
+  teamId,
+  substitutes = [],
+  plannedSubstitution = null,
+  onPlanned,
+  onSubstituted,
+}) {
   const [behavior, setBehavior] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -80,7 +97,39 @@ function PlayerPanel({ player, onClose }) {
       <section className="player-panel__behavior">
         <h3 className="player-panel__section-title">Comportamiento</h3>
         {renderBehavior()}
+        {/* Solo para jugadores propios. El key reinicia el selector al elegir otro jugador */}
+        {canChangeBehavior && isPenalties && (
+          <p className="player-panel__notice" role="status">
+            No se pueden hacer cambios durante los penales
+          </p>
+        )}
+        {canChangeBehavior && !isPenalties && (
+          <BehaviorSelector
+            key={player.player_id}
+            matchId={matchId}
+            playerId={player.player_id}
+            currentBehaviorId={player.behavior_id}
+            onChanged={onBehaviorChanged}
+          />
+        )}
       </section>
+
+      {canSubstitute && (
+        <section className="player-panel__substitution">
+          <h3 className="player-panel__section-title">Sustitución</h3>
+          {/* El key reinicia el selector al elegir otro jugador */}
+          <SubstitutionSelector
+            key={player.player_id}
+            matchId={matchId}
+            teamId={teamId}
+            player={player}
+            substitutes={substitutes}
+            plannedSubstitution={plannedSubstitution}
+            onPlanned={onPlanned}
+            onSubstituted={onSubstituted}
+          />
+        </section>
+      )}
     </aside>
   )
 }

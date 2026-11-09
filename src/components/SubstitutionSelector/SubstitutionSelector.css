@@ -1,0 +1,61 @@
+/* Mismo estilo que el selector de comportamiento */
+.substitution-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.substitution-selector--open {
+  padding: 12px;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.substitution-selector__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.substitution-selector__select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+}
+
+.substitution-selector__select:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+.substitution-selector__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.substitution-selector__planned,
+.substitution-selector__error {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* Cambio planificado: mismo tono que el aviso de penales */
+.substitution-selector__planned {
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.12);
+  color: #c7d2fe;
+}
+
+.substitution-selector__error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}

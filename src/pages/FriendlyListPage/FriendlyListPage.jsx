@@ -63,9 +63,11 @@ function FriendlyListPage() {
                 >
                   <span className="friendly-card__teams">
                     {isOwn && <span className="friendly-card__badge">Tu amistoso</span>}
-                    Equipo #{match.teamHostId}
+                    {match.teamHostName ?? `Equipo #${match.teamHostId}`}
                     <span className="friendly-card__vs">vs</span>
-                    {match.teamAwayId ? `Equipo #${match.teamAwayId}` : "Esperando rival"}
+                    {match.teamAwayId
+                      ? (match.teamAwayName ?? `Equipo #${match.teamAwayId}`)
+                      : "Esperando rival"}
                   </span>
                   <span className="friendly-card__meta">
                     {match.matchDuration} min

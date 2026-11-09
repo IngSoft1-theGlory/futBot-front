@@ -1,0 +1,45 @@
+/* Estilos propios de Crear Liga. El resto (pasos, tarjeta, opciones, alertas)
+   viene de CreateFriendlyPage.css, que se importa en el componente. */
+
+.create-league__card {
+  max-width: 560px;
+  --form-field-label-color: #e2e8f0;
+}
+
+.create-league__card .form-field {
+  margin: 0.75rem 0 0;
+}
+
+.create-league__card .form-field__input {
+  background: rgba(148, 163, 184, 0.06);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #f8fafc;
+}
+
+.league-field {
+  margin-top: 0.75rem;
+}
+
+.league-field__label {
+  margin: 0 0 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* Los cupos son 5 opciones: se achican para que entren en una fila */
+.league-field__options {
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+}
+
+.league-field__options .duration-option {
+  padding: 0.75rem 0.5rem;
+}
+
+.league-field__options .duration-option__minutes {
+  font-size: 1.25rem;
+}
+
+.create-league__retry {
+  margin-top: 0.5rem;
+}

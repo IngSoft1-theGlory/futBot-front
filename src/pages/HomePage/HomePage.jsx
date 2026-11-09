@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Button from "../../components/Button/Button"
 import ActionCard from "../../components/ActionCard/ActionCard"
+import RankingPreview from "../../components/RankingPreview/RankingPreview"
 import { useSession } from "../../hooks/useSession"
 import "./HomePage.css"
 
@@ -61,10 +62,13 @@ function HomePage() {
         <span className="home-topbar__brand">FutBot</span>
 
         <div className="home-topbar__user">
-          <span className="home-topbar__avatar" aria-hidden="true">
-            {(user?.username ?? "?").charAt(0).toUpperCase()}
-          </span>
-          <span className="home-topbar__username">{user?.username ?? "Jugador"}</span>
+          {/* el avatar y el nombre llevan al perfil del usuario */}
+          <Link to="/profile" className="home-topbar__profile" title="Ver mi perfil">
+            <span className="home-topbar__avatar" aria-hidden="true">
+              {(user?.username ?? "?").charAt(0).toUpperCase()}
+            </span>
+            <span className="home-topbar__username">{user?.username ?? "Jugador"}</span>
+          </Link>
           <Button variant="danger" onClick={handleLogout} isLoading={isLoggingOut}>
             Cerrar sesión
           </Button>
@@ -135,6 +139,13 @@ function HomePage() {
               <Button onClick={() => navigate("/behaviors")}>Ver comportamientos</Button>
             </ActionCard>
           </div>
+        </section>
+
+        <section className="home-section" aria-labelledby="competition-title">
+          <h2 id="competition-title" className="home-section__title">
+            Competencia
+          </h2>
+          <RankingPreview icon={<TrophyIcon />} teamId={user?.team_id} onSeeAll={() => navigate("/ranking")} />
         </section>
       </main>
     </div>

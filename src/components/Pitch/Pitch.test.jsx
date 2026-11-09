@@ -41,6 +41,20 @@ describe("Pitch", () => {
     )
   })
 
+  it("Debería encuadrar la mitad del local durante los penales, sin cambiar la proporción", () => {
+    render(<Pitch isPenalties />)
+
+    const [x, y, viewWidth, viewHeight] = screen
+      .getByRole("img", { name: "Cancha de fútbol" })
+      .getAttribute("viewBox")
+      .split(" ")
+      .map(Number)
+    expect(x).toBe(-margin)
+    expect(x + viewWidth).toBe(length / 2 + margin)
+    expect(y + viewHeight / 2).toBeCloseTo(width / 2)
+    expect(viewWidth / viewHeight).toBeCloseTo((length + 2 * margin) / (width + 2 * margin))
+  })
+
   it("Debería dibujar el césped cubriendo toda la cancha", () => {
     render(<Pitch />)
 

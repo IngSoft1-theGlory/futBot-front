@@ -1,0 +1,125 @@
+.behavior-detail {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: left; /* #root centra el texto: acá lo alineamos a la izquierda */
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.75rem;
+}
+
+/* Botón con aspecto de enlace, igual que "Volver al inicio" */
+.behavior-detail__back {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #818cf8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.behavior-detail__back:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+.behavior-detail__back:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.behavior-detail__message {
+  color: #94a3b8;
+}
+
+.behavior-detail__message--error {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+}
+
+.behavior-detail__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.behavior-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.behavior-detail__name {
+  margin: 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+/* Etiqueta "Por default" */
+.behavior-detail__badge {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  border-radius: 999px;
+}
+
+.behavior-detail__subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.behavior-detail__description {
+  color: #cbd5e1;
+  margin-left: 0.80rem;
+  margin-right: 0.80rem;
+  overflow-wrap: anywhere;
+}
+
+/* Bloque de código: letra monoespaciada, respeta la indentación
+   y aparece una barra de scroll si el código es largo o ancho */
+.behavior-detail__code {
+  margin: 0;
+  max-height: 400px;
+  overflow: auto;
+  padding: 1rem;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre; /* no junta espacios ni corta las líneas largas */
+  tab-size: 4;
+  color: #e2e8f0;
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.5rem;
+}
+
+.behavior-detail__toolbar {
+  font-size: 1.15rem;
+  padding: 0.5rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
