@@ -21,12 +21,16 @@ vi.mock("../../services/globalSocket", () => ({
 import { fetchLeagues } from "../../services/leagues"
 import LeagueListPage from "./LeagueListPage"
 
-const PUBLICA = { leagueId: 1, leagueName: "Liga Pública", teamsCurrent: 2, maxTeams: 8, isPrivate: false }
-const PRIVADA = { leagueId: 2, leagueName: "Liga Privada", teamsCurrent: 3, maxTeams: 4, isPrivate: true }
-const LLENA = { leagueId: 3, leagueName: "Liga Llena", teamsCurrent: 4, maxTeams: 4, isPrivate: false }
+const PUBLICA = { leagueId: 1, leagueName: "Liga Pública", teamsCurrent: 2, maxTeams: 8, isPrivate: false, status: "PENDING" }
+const PRIVADA = { leagueId: 2, leagueName: "Liga Privada", teamsCurrent: 3, maxTeams: 4, isPrivate: true, status: "PENDING" }
+const LLENA = { leagueId: 3, leagueName: "Liga Llena", teamsCurrent: 4, maxTeams: 4, isPrivate: false, status: "PENDING" }
 const MIEMBRO_PUBLICA = { ...PUBLICA, leagueId: 4, leagueName: "Mi Liga Pública", isMember: true }
 const MIEMBRO_PRIVADA = { ...PRIVADA, leagueId: 5, leagueName: "Mi Liga Privada", isMember: true }
 const MIEMBRO_LLENA = { ...LLENA, leagueId: 6, leagueName: "Mi Liga Llena", isMember: true }
+const PUBLICA_EN_CURSO = { ...PUBLICA, leagueId: 7, leagueName: "Liga Pública en curso", status: "IN_PROGRESS" }
+const PRIVADA_EN_CURSO = { ...PRIVADA, leagueId: 8, leagueName: "Liga Privada en curso", status: "IN_PROGRESS" }
+const MIEMBRO_EN_CURSO = { ...PUBLICA_EN_CURSO, leagueId: 9, leagueName: "Mi Liga en curso", isMember: true }
+const LLENA_EN_CURSO = { ...PUBLICA_EN_CURSO, leagueId: 10, leagueName: "Liga llena en curso", teamsCurrent: 4, maxTeams: 4 }
 
 
 // state: lo que manda otra pantalla al navegar al listado (ej: { message })
@@ -149,6 +153,57 @@ describe("LeagueListPage", () => {
     renderPage()
     expect(await screen.findByRole("button", { name: /Ir a la sala/ })).toBeTruthy()
     expect(screen.getByRole("button", { name: /Unirme/ })).toBeTruthy()
+  })
+
+  it("Debería un miembro de una liga en curso ver 'En curso' e 'Ir a la sala', y entrar al lobby", async () => {
+    fetchLeagues.mockResolvedValue([MIEMBRO_EN_CURSO])
+    renderPage()
+    expect(await screen.findByText("En curso")).toBeTruthy()
+    expect(screen.getByRole("button", { name: /Ir a la sala/ }).disabled).toBe(false)
+
+    await userEvent.click(screen.getByText("Mi Liga en curso"))
+    expect(screen.getByRole("heading", { name: "Lobby" })).toBeTruthy()
+  })
+
+  it.each([PUBLICA_EN_CURSO, PRIVADA_EN_CURSO, LLENA_EN_CURSO])(
+    "Debería deshabilitar para un no miembro la liga en curso: $leagueName",
+    async (league) => {
+      fetchLeagues.mockResolvedValue([league])
+      renderPage()
+      expect(await screen.findByText(league.leagueName)).toBeTruthy()
+      expect(screen.getByText(league.leagueName).closest("button").disabled).toBe(true)
+      expect(screen.getByText("En curso")).toBeTruthy()
+      expect(screen.queryByText("Unirme")).toBeNull()
+      expect(screen.queryByText("Llena")).toBeNull()
+    },
+  )
+
+  it("Debería pasar la liga a 'En curso' al llegar LEAGUE_INITIATED, sin recargar", async () => {
+    fetchLeagues
+      .mockResolvedValueOnce([PUBLICA])
+      .mockResolvedValueOnce([{ ...PUBLICA, status: "IN_PROGRESS" }])
+    renderPage()
+    expect(await screen.findByText("Unirme")).toBeTruthy()
+    expect(screen.queryByText("En curso")).toBeNull()
+
+    act(() => mockListeners.get("LEAGUE_INITIATED").forEach((listener) => listener({ league_id: 1 })))
+
+    expect(await screen.findByText("En curso")).toBeTruthy()
+    expect(screen.queryByText("Unirme")).toBeNull()
+    expect(fetchLeagues).toHaveBeenCalledTimes(2)
+  })
+
+  it("Debería sacar la liga del listado al llegar LEAGUE_FINISHED, sin recargar", async () => {
+    fetchLeagues
+      .mockResolvedValueOnce([MIEMBRO_EN_CURSO, PUBLICA])
+      .mockResolvedValueOnce([PUBLICA])
+    renderPage()
+    expect(await screen.findByText("Mi Liga en curso")).toBeTruthy()
+
+    act(() => mockListeners.get("LEAGUE_FINISHED").forEach((listener) => listener({ league_id: 9 })))
+
+    await waitFor(() => expect(screen.queryByText("Mi Liga en curso")).toBeNull())
+    expect(screen.getByText("Liga Pública")).toBeTruthy()
   })
 
   it("Debería un miembro de una liga llena poder entrar al lobby", async () => {
