@@ -247,37 +247,39 @@ function LeagueLobbyPage() {
             </p>
           )}
 
-          {/* Mientras una solicitud está en curso (iniciar o cancelar), el otro botón queda deshabilitado */}
-          {canShowHostActions && (
-            <Button
-              onClick={handleStart}
-              isLoading={isInitiating}
-              disabled={!canStart || isCancelling}
-            >
-              {isInitiating ? "Iniciando..." : "Iniciar liga"}
-            </Button>
-          )}
+          <div className="league-lobby__actions">
+            {/* Mientras una solicitud está en curso (iniciar o cancelar), el otro botón queda deshabilitado */}
+            {canShowHostActions && (
+              <Button
+                onClick={handleStart}
+                isLoading={isInitiating}
+                disabled={!canStart || isCancelling}
+              >
+                {isInitiating ? "Iniciando..." : "Iniciar liga"}
+              </Button>
+            )}
 
-          {canShowHostActions && (
-            <ConfirmButton
-              label={isCancelling ? "Cancelando..." : "Cancelar liga"}
-              confirmMessage="¿Seguro que querés cancelar la liga?"
-              onConfirm={handleCancel}
-              isLoading={isCancelling}
-              disabled={isInitiating}
-              variant="danger"
-            />
-          )}
+            {canShowHostActions && (
+              <ConfirmButton
+                label={isCancelling ? "Cancelando..." : "Cancelar liga"}
+                confirmMessage="¿Seguro que querés cancelar la liga?"
+                onConfirm={handleCancel}
+                isLoading={isCancelling}
+                disabled={isInitiating}
+                variant="danger"
+              />
+            )}
 
-          {isMember && !isHost && (
-            <ConfirmButton
-              label={isLeaving ? "Saliendo..." : "Abandonar liga"}
-              confirmMessage="¿Seguro que querés abandonar la liga?"
-              onConfirm={handleLeave}
-              isLoading={isLeaving}
-              variant="danger"
-            />
-          )}
+            {isMember && !isHost && (
+              <ConfirmButton
+                label={isLeaving ? "Saliendo..." : "Abandonar liga"}
+                confirmMessage="¿Seguro que querés abandonar la liga?"
+                onConfirm={handleLeave}
+                isLoading={isLeaving}
+                variant="danger"
+              />
+            )}
+          </div>
         </>
       ) : (
         <LeagueInProgressView league={league} teamId={user?.team_id} isMember={isMember} />
