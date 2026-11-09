@@ -19,10 +19,11 @@ import { ApiError } from "../../services/createhttpService"
 import { fetchMatchResult, getOutcome } from "../../services/matchResult"
 import MatchResultPage from "./MatchResultPage"
 
-// penaltyGoals en null significa "no hubo penales" (igual que lo deja fetchMatchResult)
+// penaltyGoals en null significa "no hubo penales" y leagueId en null "es amistoso" (igual que lo deja fetchMatchResult)
 const equipo = (id, name, goals, penaltyGoals = null) => ({ id, name, goals, penaltyGoals })
 const resultado = (homeGoals, awayGoals, homePenalties = null, awayPenalties = null) => ({
   matchId: 9,
+  leagueId: null,
   home: equipo(5, "Los Pumas", homeGoals, homePenalties),
   away: equipo(7, "Los Tigres", awayGoals, awayPenalties),
 })
@@ -34,6 +35,7 @@ function renderPage() {
         <Route path="/matches/:matchId/result" element={<MatchResultPage />} />
         <Route path="/matches/:matchId" element={<h1>Pantalla del partido</h1>} />
         <Route path="/friendlies" element={<h1>Amistosos</h1>} />
+        <Route path="/leagues/3" element={<h1>Sala de la liga 3</h1>} />
         <Route path="/" element={<h1>Inicio</h1>} />
       </Routes>
     </MemoryRouter>
@@ -207,13 +209,28 @@ describe("MatchResultPage", () => {
     expect(screen.queryByRole("alert")).toBeNull()
   })
 
-  it("Debería ofrecer volver al inicio y ver los amistosos", async () => {
+  it("Debería ofrecer volver al inicio y ver los amistosos si el partido es amistoso", async () => {
     fetchMatchResult.mockResolvedValue(resultado(1, 0))
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole("button", { name: "Ver Amistosos" }))
+    expect(await screen.findByRole("button", { name: "Volver al Inicio" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Ver Liga" })).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Ver Amistosos" }))
     expect(screen.getByText("Amistosos")).toBeTruthy()
+  })
+
+  it("Debería ofrecer volver al inicio y ver la liga, sin 'Ver Amistosos', si el partido es de liga", async () => {
+    fetchMatchResult.mockResolvedValue({ ...resultado(1, 0), leagueId: 3 })
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByRole("button", { name: "Volver al Inicio" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Ver Amistosos" })).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Ver Liga" }))
+    expect(screen.getByText("Sala de la liga 3")).toBeTruthy()
   })
 
   it("Debería llevar al inicio con el botón Volver al Inicio", async () => {

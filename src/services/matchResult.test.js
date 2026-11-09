@@ -56,4 +56,21 @@ describe("fetchMatchResult", () => {
     expect(result.home.penaltyGoals).toBeNull()
     expect(result.away.penaltyGoals).toBeNull()
   })
+
+  it("Debería devolver el leagueId si el partido es de liga", async () => {
+    httpService.get.mockResolvedValue({ ...RESULT_WITH_PENALTIES, league_id: 3 })
+
+    const result = await fetchMatchResult("9")
+
+    expect(result.leagueId).toBe(3)
+  })
+
+  it("Debería dejar leagueId en null si el partido es amistoso o si el campo no viene", async () => {
+    httpService.get.mockResolvedValueOnce({ ...RESULT_WITH_PENALTIES, league_id: null })
+    expect((await fetchMatchResult("9")).leagueId).toBeNull()
+
+    // RESULT_WITH_PENALTIES no trae el campo league_id (como un back que todavía no lo manda)
+    httpService.get.mockResolvedValueOnce(RESULT_WITH_PENALTIES)
+    expect((await fetchMatchResult("9")).leagueId).toBeNull()
+  })
 })
